@@ -83,12 +83,56 @@ npm start
 Then, sending your `ADMIN_API_KEYS` value as the `x-api-key` header:
 
 ```
-GET  /api/status                 → connection state of every platform
-GET  /auth/:platform/start       → begin that platform's OAuth flow
-POST /auth/:platform/disconnect  → forget stored tokens for that platform
-GET  /api/:platform/summary      → analytics snapshot for one connected platform
-GET  /api/summary                → snapshot for every connected platform at once
+GET  /api/status                              → connection state of every platform
+GET  /auth/:platform/start                    → begin that platform's OAuth flow
+POST /auth/:platform/disconnect               → forget stored tokens for that platform
+GET  /api/:platform/summary                   → analytics snapshot for one connected platform
+GET  /api/summary                             → snapshot for every connected platform at once
+GET  /api/:platform/campaigns                 → list existing campaigns
+POST /api/:platform/campaigns                 → create a campaign (always PAUSED — see below)
+POST /api/:platform/campaigns/:id/status      → { "status": "ACTIVE" | "PAUSED" } — the only call that can start spend
 ```
+
+### Campaign creation — paused by default, on purpose
+
+`POST /api/:platform/campaigns` always creates the campaign in a **paused /
+draft** state on the platform, regardless of what's in the request body.
+Nothing here ever turns spend on as a side effect of creating something.
+Going live is a separate, explicit call: `POST
+/api/:platform/campaigns/:id/status` with `{"status": "ACTIVE"}`. Treat that
+one endpoint as the "this spends real money" button when wiring up the
+frontend — everything before it is safe to click around in.
+
+Per-platform request bodies for `POST /api/:platform/campaigns` (see each
+`src/platforms/*.js` for the authoritative shape — these APIs are exactly
+what each provider's real Ads API expects, but none have been exercised
+against a live account yet, so double-check the field names against that
+platform's current docs the first time you actually connect it):
+
+| platform  | required body fields |
+|-----------|----------------------|
+| meta      | `name`, `objective` (e.g. `OUTCOME_TRAFFIC`) |
+| google    | `name`, `dailyBudgetMicros` (1 USD = 1,000,000) |
+| reddit    | `name`, `objective`, `dailyBudgetCents` |
+| pinterest | `name`, `objectiveType`, `dailySpendCapCents` |
+| linkedin  | `name`, `campaignGroupUrn` (create the group in Campaign Manager first), `dailyBudgetAmount` |
+| snapchat  | `name`, `objective` |
+| tiktok    | not wired up — see note below |
+| twitter   | not wired up — see note below |
+
+**TikTok and X/Twitter campaign endpoints deliberately throw an explanatory
+error instead of a fake success.** Their Ads APIs authenticate completely
+differently from the consumer login flow already implemented here (TikTok
+Marketing API needs a separate TikTok-for-Business OAuth app; X Ads API uses
+OAuth 1.0a, not the OAuth 2.0 token used for X analytics). Wiring those up
+is a distinct, small follow-up once Mark decides he actually wants ads on
+those two specifically — flagged here rather than silently built as
+something that would fail confusingly later.
+
+Every platform also needs its ad-account id set in `.env` before campaign
+routes work at all (`META_AD_ACCOUNT_ID`, `GOOGLE_ADS_CUSTOMER_ID`, etc. —
+see `.env.example`) — `/api/:platform/campaigns` returns a clear error
+naming exactly which one is missing rather than failing silently.
 
 ## Architecture
 
@@ -123,18 +167,25 @@ reconnecting.
   open.
 - `.env` and `data/` (the encrypted token store + local dev encryption key)
   are gitignored — never commit real credentials or tokens.
-- This backend only ever *reads* analytics by default. None of the
-  `getSummary()` calls place spend or launch a campaign — building actual
-  campaign-creation endpoints is a deliberate next step, not something to
-  wire up silently.
+- Campaigns are always created **paused**. The only endpoint that can start
+  spend is the explicit `POST /api/:platform/campaigns/:id/status` call —
+  nothing else in this backend flips a campaign live as a side effect.
+- TikTok and X campaign endpoints refuse to run rather than silently fail —
+  their Ads APIs need credentials this backend doesn't collect yet (see
+  "Campaign creation" above).
 
 ## Roadmap
 
-1. ✅ OAuth + encrypted token storage + read-only analytics summaries (this repo).
-2. Pick which platforms Julieth/Mark actually want live (all 8 are scaffolded;
-   not all need real credentials).
-3. Deploy the backend somewhere with secret support (Render/Railway/Vercel).
-4. Build the dashboard frontend (separate piece, per your earlier direction) that
-   calls this backend's `/api/summary`.
-5. Only after review: campaign-creation/write endpoints, kept behind extra
-   confirmation since they spend real money.
+1. ✅ OAuth + encrypted token storage + read-only analytics summaries.
+2. ✅ Campaign create/list/activate endpoints for Meta, Google Ads, Reddit,
+   Pinterest, LinkedIn, Snapchat — paused-by-default, one explicit call to
+   go live.
+3. Pick which platforms Julieth/Mark actually want live (all 8 are
+   scaffolded for analytics; 6 of 8 for campaigns — not all need real
+   credentials right away).
+4. Deploy the backend somewhere with secret support (Render/Railway/Vercel).
+5. Build the dashboard frontend (separate piece, per your earlier direction)
+   that calls this backend's `/api/summary` and campaign endpoints.
+6. If needed: TikTok-for-Business and X Ads API (OAuth 1.0a) connections,
+   which are structurally separate from the analytics connections already
+   built for those two platforms.

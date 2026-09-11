@@ -8,7 +8,34 @@
 // gracefully to "not configured" until it's supplied.
 'use strict';
 
-const { definePlatform, apiGet } = require('./base');
+const { definePlatform, apiGet, requireEnv } = require('./base');
+
+const ADS_API_VERSION = 'v17';
+
+function googleAdsHeaders(accessToken) {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    'developer-token': requireEnv(
+      'GOOGLE_ADS_DEVELOPER_TOKEN',
+      'Apply for one at https://ads.google.com/aw/apicenter — approval can take days/weeks.'
+    ),
+    'Content-Type': 'application/json',
+  };
+}
+
+async function googleAdsMutate(accessToken, customerId, resource, operations) {
+  const res = await fetch(
+    `https://googleads.googleapis.com/${ADS_API_VERSION}/customers/${customerId}/${resource}:mutate`,
+    {
+      method: 'POST',
+      headers: googleAdsHeaders(accessToken),
+      body: JSON.stringify({ operations }),
+    }
+  );
+  const json = await res.json();
+  if (!res.ok) throw new Error(`Google Ads ${resource}:mutate failed (${res.status}): ${JSON.stringify(json).slice(0, 400)}`);
+  return json;
+}
 
 module.exports = definePlatform({
   id: 'google',
@@ -76,5 +103,74 @@ module.exports = definePlatform({
     }
 
     return summary;
+  },
+
+  async listCampaigns(tokens) {
+    const customerId = requireEnv('GOOGLE_ADS_CUSTOMER_ID', 'Set it to the target Google Ads account id (no dashes).');
+    const res = await fetch(
+      `https://googleads.googleapis.com/${ADS_API_VERSION}/customers/${customerId}/googleAds:search`,
+      {
+        method: 'POST',
+        headers: googleAdsHeaders(tokens.accessToken),
+        body: JSON.stringify({
+          query: 'SELECT campaign.id, campaign.name, campaign.status, campaign_budget.amount_micros FROM campaign',
+        }),
+      }
+    );
+    const json = await res.json();
+    if (!res.ok) throw new Error(`Google Ads search failed (${res.status}): ${JSON.stringify(json).slice(0, 400)}`);
+    return json.results || [];
+  },
+
+  /**
+   * Google Ads campaigns require a CampaignBudget resource to exist first,
+   * then a Campaign referencing it — this does both in sequence. Always
+   * created PAUSED; flip live via setCampaignStatus once reviewed.
+   * @param {{name: string, dailyBudgetMicros: number, advertisingChannelType?: string}} params
+   *   advertisingChannelType: e.g. "SEARCH", "DISPLAY", "VIDEO" (defaults to SEARCH)
+   */
+  async createCampaign(tokens, params) {
+    const customerId = requireEnv('GOOGLE_ADS_CUSTOMER_ID', 'Set it to the target Google Ads account id (no dashes).');
+    if (!params?.name || !params?.dailyBudgetMicros) {
+      throw new Error('Google Ads campaign requires: name, dailyBudgetMicros (1 USD = 1,000,000 micros).');
+    }
+
+    const budgetResourceName = `customers/${customerId}/campaignBudgets/-1`;
+    const budgetResult = await googleAdsMutate(tokens.accessToken, customerId, 'campaignBudgets', [
+      {
+        create: {
+          resourceName: budgetResourceName,
+          name: `${params.name} — budget`,
+          amountMicros: String(params.dailyBudgetMicros),
+          deliveryMethod: 'STANDARD',
+        },
+      },
+    ]);
+    const createdBudgetResourceName = budgetResult.results?.[0]?.resourceName || budgetResourceName;
+
+    const campaignResult = await googleAdsMutate(tokens.accessToken, customerId, 'campaigns', [
+      {
+        create: {
+          name: params.name,
+          status: 'PAUSED',
+          advertisingChannelType: params.advertisingChannelType || 'SEARCH',
+          campaignBudget: createdBudgetResourceName,
+        },
+      },
+    ]);
+    return campaignResult;
+  },
+
+  async setCampaignStatus(tokens, campaignResourceName, status) {
+    if (!['ENABLED', 'PAUSED', 'REMOVED'].includes(status)) {
+      throw new Error('status must be ENABLED, PAUSED, or REMOVED');
+    }
+    const customerId = requireEnv('GOOGLE_ADS_CUSTOMER_ID');
+    return googleAdsMutate(tokens.accessToken, customerId, 'campaigns', [
+      {
+        update: { resourceName: campaignResourceName, status },
+        updateMask: 'status',
+      },
+    ]);
   },
 });

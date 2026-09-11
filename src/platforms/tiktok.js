@@ -27,4 +27,26 @@ module.exports = definePlatform({
     );
     return info.data?.user || info;
   },
+
+  // --- Campaign creation is intentionally NOT wired to this connection ---
+  // TikTok's Marketing API (business-api.tiktok.com) authenticates with an
+  // access token from TikTok for Business's own OAuth app, which is a
+  // completely separate credential system from the Login Kit token this
+  // module uses for getSummary() above — the Login Kit token will not
+  // authorize ads calls no matter what's passed in. Rather than pretend
+  // this works, these throw a clear explanation so nobody ships a silently
+  // broken "Create campaign" button.
+  async listCampaigns() {
+    throw new Error(
+      'TikTok campaign management needs a separate TikTok for Business connection ' +
+      '(business-api.tiktok.com), not the Login Kit token used for TikTok analytics here. ' +
+      'Add a dedicated TikTok-for-Business OAuth flow before wiring this up.'
+    );
+  },
+  async createCampaign() {
+    return this.listCampaigns();
+  },
+  async setCampaignStatus() {
+    return this.listCampaigns();
+  },
 });

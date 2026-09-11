@@ -4,7 +4,7 @@
 // and Meta App Review before they work outside your own test users.
 'use strict';
 
-const { definePlatform, apiGet } = require('./base');
+const { definePlatform, apiGet, apiPost, requireEnv } = require('./base');
 
 const GRAPH_VERSION = 'v19.0';
 
@@ -40,5 +40,46 @@ module.exports = definePlatform({
       pages: pages.data || [],
       adAccounts: adAccounts.data || [],
     };
+  },
+
+  async listCampaigns(tokens) {
+    const accountId = requireEnv('META_AD_ACCOUNT_ID', 'Set it to the numeric id shown in Meta Ads Manager account settings.');
+    const res = await apiGet(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${accountId}/campaigns?fields=name,objective,status,daily_budget,lifetime_budget,created_time&access_token=${tokens.accessToken}`
+    );
+    return res.data || [];
+  },
+
+  /**
+   * Creates a campaign. Always created PAUSED regardless of what's passed in
+   * — flipping it live is a separate, deliberate call to setCampaignStatus.
+   * @param {{name: string, objective: string, specialAdCategories?: string[]}} params
+   *   objective: e.g. "OUTCOME_TRAFFIC", "OUTCOME_ENGAGEMENT", "OUTCOME_AWARENESS"
+   *   (Meta's Outcome-Driven Ad Experience objective names).
+   */
+  async createCampaign(tokens, params) {
+    const accountId = requireEnv('META_AD_ACCOUNT_ID', 'Set it to the numeric id shown in Meta Ads Manager account settings.');
+    if (!params?.name || !params?.objective) {
+      throw new Error('Meta campaign requires: name, objective (e.g. OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT, OUTCOME_AWARENESS).');
+    }
+    return apiPost(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${accountId}/campaigns?access_token=${tokens.accessToken}`,
+      {},
+      {
+        name: params.name,
+        objective: params.objective,
+        status: 'PAUSED',
+        special_ad_categories: params.specialAdCategories || [],
+      }
+    );
+  },
+
+  async setCampaignStatus(tokens, campaignId, status) {
+    if (!['ACTIVE', 'PAUSED'].includes(status)) throw new Error('status must be ACTIVE or PAUSED');
+    return apiPost(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${campaignId}?access_token=${tokens.accessToken}`,
+      {},
+      { status }
+    );
   },
 });

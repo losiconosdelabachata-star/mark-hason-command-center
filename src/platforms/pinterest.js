@@ -1,7 +1,7 @@
 // Pinterest. App setup: https://developers.pinterest.com/apps
 'use strict';
 
-const { definePlatform, apiGet } = require('./base');
+const { definePlatform, apiGet, apiPost, apiPatch, requireEnv } = require('./base');
 
 module.exports = definePlatform({
   id: 'pinterest',
@@ -24,5 +24,46 @@ module.exports = definePlatform({
       monthlyViews: account.monthly_views,
       accountType: account.account_type,
     };
+  },
+
+  async listCampaigns(tokens) {
+    const accountId = requireEnv('PINTEREST_AD_ACCOUNT_ID');
+    const res = await apiGet(`https://api.pinterest.com/v5/ad_accounts/${accountId}/campaigns`, {
+      Authorization: `Bearer ${tokens.accessToken}`,
+    });
+    return res.items || [];
+  },
+
+  /**
+   * Always created PAUSED; flip live via setCampaignStatus once reviewed.
+   * @param {{name: string, objectiveType: string, dailySpendCapCents: number}} params
+   *   objectiveType: e.g. "AWARENESS", "CONSIDERATION", "CATALOG_SALES"
+   */
+  async createCampaign(tokens, params) {
+    const accountId = requireEnv('PINTEREST_AD_ACCOUNT_ID');
+    if (!params?.name || !params?.objectiveType || !params?.dailySpendCapCents) {
+      throw new Error('Pinterest campaign requires: name, objectiveType, dailySpendCapCents.');
+    }
+    return apiPost(
+      `https://api.pinterest.com/v5/ad_accounts/${accountId}/campaigns`,
+      { Authorization: `Bearer ${tokens.accessToken}` },
+      {
+        name: params.name,
+        objective_type: params.objectiveType,
+        status: 'PAUSED',
+        daily_spend_cap: params.dailySpendCapCents,
+      }
+    );
+  },
+
+  async setCampaignStatus(tokens, campaignId, status) {
+    if (!['ACTIVE', 'PAUSED'].includes(status)) throw new Error('status must be ACTIVE or PAUSED');
+    const accountId = requireEnv('PINTEREST_AD_ACCOUNT_ID');
+    // Pinterest's v5 campaigns PATCH endpoint takes a batch array, even for one.
+    return apiPatch(
+      `https://api.pinterest.com/v5/ad_accounts/${accountId}/campaigns`,
+      { Authorization: `Bearer ${tokens.accessToken}` },
+      [{ id: campaignId, status }]
+    );
   },
 });
