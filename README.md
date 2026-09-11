@@ -11,6 +11,29 @@ frontend for Mark to actually look at is a separate piece of work, built
 once this backend is deployed and at least one platform is connected end to
 end. See [Architecture](#architecture) for why they're split.
 
+## Live deployment
+
+Deployed on Railway: **https://mark-hason-command-center-production.up.railway.app**
+
+That URL only answers `GET /` with no key. Every `/auth/*` and `/api/*`
+route requires the `x-api-key` header — Mark has that value; treat it like a
+password (store it in a password manager, don't paste it into chat tools or
+commit it anywhere). To redeploy after pulling changes:
+
+```bash
+railway login      # first time only, on whichever machine is deploying
+railway link        # select: mark-hason-command-center
+railway up
+```
+
+To add or rotate a platform's credentials once Mark has them:
+
+```bash
+railway variables --set "META_CLIENT_ID=..." --set "META_CLIENT_SECRET=..."
+```
+
+Setting a variable triggers an automatic redeploy.
+
 ## Status: scaffold, not yet connected to any real account
 
 Every platform module implements the real OAuth2 endpoints and a real
@@ -153,11 +176,12 @@ to change; `src/platforms/index.js` picks it up automatically.
 
 ## Deploying
 
-Any host that supports environment variables and a long-running (or
-serverless) Node process works — Render and Railway are the simplest for a
-plain Express app like this. Set `PUBLIC_BASE_URL` to the deployed URL and
-update each platform's redirect URI registration to match before
-reconnecting.
+Currently deployed on **Railway** (see [Live deployment](#live-deployment)
+above) — a good fit since it runs this as a plain persistent Node process,
+no code changes needed. `PUBLIC_BASE_URL` is already set to match the
+Railway domain; if you ever move it to a different host or custom domain,
+update `PUBLIC_BASE_URL` first and then update every connected platform's
+redirect URI registration to match before reconnecting.
 
 ## Security notes
 
