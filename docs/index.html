@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mark Hason Command Center</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">MHC</div>
+      <div>
+        <h1>Mark Hason Command Center</h1>
+        <p class="subtitle">Julieth Tapia Co · <a href="https://www.instagram.com/julitaco3" target="_blank" rel="noopener">@julitaco3</a></p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span id="connection-summary" class="pill pill-muted">checking…</span>
+      <button id="refresh-btn" class="btn btn-ghost" title="Refresh status">⟳ Refresh</button>
+      <button id="settings-btn" class="btn btn-ghost" title="Settings">⚙ Settings</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <section id="key-gate" class="empty-state" hidden>
+      <h2>Connect this dashboard to the backend</h2>
+      <p>You need the admin API key for the Command Center backend before anything here will work.</p>
+      <button id="key-gate-btn" class="btn btn-primary">Enter admin key</button>
+    </section>
+
+    <section id="platform-grid" class="grid" hidden></section>
+  </main>
+
+  <!-- Settings modal: backend URL + admin API key, stored only in this browser's localStorage. -->
+  <dialog id="settings-modal" class="modal">
+    <form method="dialog" id="settings-form">
+      <h2>Settings</h2>
+      <p class="hint">Stored only in this browser (localStorage) — never sent anywhere except as a header to the backend below.</p>
+      <label>
+        Backend URL
+        <input type="url" id="setting-base-url" required />
+      </label>
+      <label>
+        Admin API key
+        <input type="password" id="setting-api-key" autocomplete="off" required />
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="settings-clear" class="btn btn-ghost">Clear</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Platform detail modal: summary + campaigns + create-campaign form. -->
+  <dialog id="detail-modal" class="modal modal-wide">
+    <div class="modal-header">
+      <h2 id="detail-title">Platform</h2>
+      <button id="detail-close" class="btn btn-ghost" aria-label="Close">✕</button>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="summary">Analytics</button>
+      <button class="tab-btn" data-tab="campaigns">Campaigns</button>
+      <button class="tab-btn" data-tab="create">New campaign</button>
+    </div>
+
+    <div id="tab-summary" class="tab-panel active">
+      <div id="summary-content" class="panel-content"><p class="hint">Loading…</p></div>
+    </div>
+
+    <div id="tab-campaigns" class="tab-panel">
+      <div id="campaigns-content" class="panel-content"><p class="hint">Loading…</p></div>
+    </div>
+
+    <div id="tab-create" class="tab-panel">
+      <form id="create-campaign-form">
+        <label>
+          Campaign name
+          <input type="text" id="campaign-name" required placeholder="e.g. Spring Print Sale" />
+        </label>
+        <label>
+          Additional fields (JSON)
+          <textarea id="campaign-extra" rows="5"></textarea>
+        </label>
+        <p class="hint" id="create-hint"></p>
+        <button type="submit" class="btn btn-primary">Create campaign (starts paused)</button>
+      </form>
+    </div>
+  </dialog>
+
+  <div id="toast-container" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
