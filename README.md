@@ -13,18 +13,34 @@ end. See [Architecture](#architecture) for why they're split.
 
 ## Live deployment
 
-Deployed on Railway: **https://mark-hason-command-center-production.up.railway.app**
+- **Dashboard (open this one):** https://losiconosdelabachata-star.github.io/mark-hason-command-center/
+- **Backend API:** https://mark-hason-command-center-production.up.railway.app
 
-That URL only answers `GET /` with no key. Every `/auth/*` and `/api/*`
-route requires the `x-api-key` header — Mark has that value; treat it like a
+The dashboard is a static page (this repo's `docs/` folder, served by GitHub
+Pages) that talks to the backend over its JSON API. **The repo is public**
+so free GitHub Pages hosting works — there are no real secrets in it (the
+admin key and every platform's client secret live only in Railway's env
+vars and, for the admin key, the browser of whoever opens the dashboard).
+
+The first time Mark opens the dashboard, it'll ask for the backend's admin
+API key — he has that value (or can get it with `railway variables` if he's
+added to this Railway project); it's stored only in his browser's
+localStorage from then on, never in this repo.
+
+The backend URL only answers `GET /` with no key. Every `/auth/*` and
+`/api/*` route requires the `x-api-key` header — treat that key like a
 password (store it in a password manager, don't paste it into chat tools or
-commit it anywhere). To redeploy after pulling changes:
+commit it anywhere). To redeploy the backend after pulling changes:
 
 ```bash
 railway login      # first time only, on whichever machine is deploying
 railway link        # select: mark-hason-command-center
 railway up
 ```
+
+The dashboard (`docs/`) redeploys itself — GitHub Pages rebuilds
+automatically on every push to `master` that touches that folder, usually
+live within a minute or two. No separate deploy command needed.
 
 To add or rotate a platform's credentials once Mark has them:
 
