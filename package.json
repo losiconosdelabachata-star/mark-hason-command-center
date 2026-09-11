@@ -1,0 +1,23 @@
+{
+  "name": "mark-hason-command-center",
+  "version": "0.1.0",
+  "description": "Backend for the Mark Hason Command Center — a single place to connect Meta, Google (YouTube/Ads/AdSense), Reddit, Pinterest, TikTok, X, LinkedIn and Snapchat, and pull campaign/analytics data for Julieth Tapia Co.",
+  "private": true,
+  "type": "commonjs",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "overrides": {
+    "qs": "^6.16.0"
+  }
+}
