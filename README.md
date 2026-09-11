@@ -30,17 +30,24 @@ localStorage from then on, never in this repo.
 The backend URL only answers `GET /` with no key. Every `/auth/*` and
 `/api/*` route requires the `x-api-key` header — treat that key like a
 password (store it in a password manager, don't paste it into chat tools or
-commit it anywhere). To redeploy the backend after pulling changes:
+commit it anywhere).
+
+**Both halves auto-deploy on push to `master` — no manual deploy step for
+either one:**
+- The backend's Railway service is connected directly to this GitHub repo;
+  every push triggers a new build there (watch it at
+  `railway logs --build` or the Railway dashboard).
+- The dashboard (`docs/`) is rebuilt by GitHub Pages on every push that
+  touches that folder, usually live within a minute or two.
+
+Manual redeploy is only needed if you ever want to force one without a new
+commit:
 
 ```bash
 railway login      # first time only, on whichever machine is deploying
 railway link        # select: mark-hason-command-center
 railway up
 ```
-
-The dashboard (`docs/`) redeploys itself — GitHub Pages rebuilds
-automatically on every push to `master` that touches that folder, usually
-live within a minute or two. No separate deploy command needed.
 
 To add or rotate a platform's credentials once Mark has them:
 
