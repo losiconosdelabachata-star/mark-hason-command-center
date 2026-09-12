@@ -22,7 +22,7 @@ test('chat() sends the trimmed history, system prompt, and the propose_campaign_
     return {
       ok: true,
       status: 200,
-      text: async () => JSON.stringify({ content: [{ type: 'text', text: 'Hi, I am Mark.' }] }),
+      text: async () => JSON.stringify({ content: [{ type: 'text', text: 'Hi, I am Marino 007.' }] }),
     };
   });
 
@@ -30,11 +30,11 @@ test('chat() sends the trimmed history, system prompt, and the propose_campaign_
     const history = Array.from({ length: 30 }, (_, i) => ({ role: i % 2 === 0 ? 'user' : 'assistant', content: `msg ${i}` }));
     const result = await assistant.chat(history);
 
-    assert.equal(result.reply, 'Hi, I am Mark.');
+    assert.equal(result.reply, 'Hi, I am Marino 007.');
     assert.equal(result.draft, null);
     assert.equal(capturedBody.messages.length, 20, 'should trim to the last 20 messages');
     assert.equal(capturedBody.messages.at(-1).content, 'msg 29');
-    assert.ok(capturedBody.system.includes('You are Mark'));
+    assert.ok(capturedBody.system.includes('You are Marino 007'));
     assert.ok(capturedBody.tools.some((tool) => tool.name === 'propose_campaign_draft'));
   } finally {
     process.env.ANTHROPIC_API_KEY = original;

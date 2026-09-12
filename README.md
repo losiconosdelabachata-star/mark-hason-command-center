@@ -89,24 +89,24 @@ resulting client id/secret. Until then, `/api/status` reports every
 platform as `configured: false` and the server runs safely with zero risk of
 touching a live account.
 
-## Mark — the AI co-pilot
+## Marino 007 — the AI co-pilot
 
-The dashboard has a chat widget (bottom-left) for "Mark," an AI co-pilot
-backed by the Anthropic API. His scope is deliberately narrow:
+The dashboard has a chat widget (bottom-left) for "Marino 007," an AI
+co-pilot backed by the Anthropic API. His scope is deliberately narrow:
 
 - He can see every platform's connection status and chat about it.
 - He can **propose a campaign draft** (via a `propose_campaign_draft` tool
   call) — the dashboard renders that as a card with an **"Open in form"**
   button, which pre-fills the real create-campaign form. A human still has
   to review it and click Create, then separately click Activate. Nothing
-  Mark says can create, activate, or pause a campaign by itself — the code
+  Marino says can create, activate, or pause a campaign by itself — the code
   literally has no path from his tool output into `src/platforms/*.js`.
 - Chat history persists in the browser (localStorage) per viewer, same
   pattern as the admin key and backend URL.
 
 Configure with `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`, default
-`claude-sonnet-5`) — until set, the chat widget clearly reports Mark as not
-configured instead of failing silently. See `src/assistant.js` for the
+`claude-sonnet-5`) — until set, the chat widget clearly reports Marino 007 as
+not configured instead of failing silently. See `src/assistant.js` for the
 system prompt and tool definition.
 
 ## Why this isn't just a GitHub Pages site
@@ -179,7 +179,7 @@ GET  /api/summary                             → snapshot for every connected p
 GET  /api/:platform/campaigns                 → list existing campaigns
 POST /api/:platform/campaigns                 → create a campaign (always PAUSED — see below)
 POST /api/:platform/campaigns/:id/status      → { "status": "ACTIVE" | "PAUSED" } — the only call that can start spend
-POST /api/assistant/chat                      → { "messages": [{role, content}] } → { reply, draft? } — chat with Mark
+POST /api/assistant/chat                      → { "messages": [{role, content}] } → { reply, draft? } — chat with Marino 007
 ```
 
 ### Campaign creation — paused by default, on purpose
@@ -232,7 +232,7 @@ src/tokenStore.js          Encrypted-at-rest token storage (single JSON file)
 src/crypto.js              AES-256-GCM helpers backing the token store
 src/middleware/            Admin API key gate
 src/platforms/*.js         One config + getSummary() per platform
-src/assistant.js           Mark — system prompt, propose_campaign_draft tool, Anthropic API call
+src/assistant.js           Marino 007 — system prompt, propose_campaign_draft tool, Anthropic API call
 src/routes/auth.js         /auth/:platform/start|callback|disconnect
 src/routes/api.js          /api/status, /api/:platform/summary, /api/summary
 src/routes/assistant.js    /api/assistant/chat
@@ -254,7 +254,7 @@ dependency. Runs on every push/PR via GitHub Actions
 detection, the OAuth2 client (PKCE, both token-auth styles, refresh
 fallback), every platform's config/interface/validation logic (including
 that TikTok and X correctly refuse instead of attempting a mismatched-auth
-call), Mark's system prompt/tool-call parsing, the API-key middleware, the
+call), Marino 007's system prompt/tool-call parsing, the API-key middleware, the
 token store, and end-to-end route behavior against a real Express instance
 on an ephemeral port. Nothing here needs real platform or Anthropic
 credentials — nothing in this suite makes a real network call to

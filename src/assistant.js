@@ -1,13 +1,13 @@
-// "Mark" — the AI co-pilot living inside the dashboard. Named after the
-// human Mark this whole tool is built for, on purpose.
+// "Marino 007" — the AI co-pilot living inside the dashboard.
 //
-// Scope, deliberately: Mark can see platform connection status, chat, and
+// Scope, deliberately: Marino can see platform connection status, chat, and
 // propose a campaign draft via the propose_campaign_draft tool — he never
 // calls createCampaign/setCampaignStatus himself. A draft is just JSON
-// handed back to the dashboard for a human to review in the actual
-// create-campaign form; nothing is created or activated by anything Mark
-// says. That boundary is enforced by never wiring his tool output into
-// src/platforms/*.js at all, not just by asking him nicely in the prompt.
+// handed back to the dashboard for a human (Mark, most likely) to review in
+// the actual create-campaign form; nothing is created or activated by
+// anything Marino says. That boundary is enforced by never wiring his tool
+// output into src/platforms/*.js at all, not just by asking him nicely in
+// the prompt.
 'use strict';
 
 const platforms = require('./platforms');
@@ -17,7 +17,7 @@ const ANTHROPIC_VERSION = '2023-06-01';
 const MAX_HISTORY_MESSAGES = 20; // bound token usage on long-running conversations
 
 // Only these platforms have a real createCampaign() — tiktok/twitter need a
-// separate Ads connection (see README), so don't let Mark suggest drafts
+// separate Ads connection (see README), so don't let Marino suggest drafts
 // for platforms that would just fail if a human tried to act on them.
 const CAMPAIGN_CAPABLE = ['meta', 'google', 'reddit', 'pinterest', 'linkedin', 'snapchat'];
 
@@ -57,7 +57,7 @@ function buildSystemPrompt() {
   });
 
   return [
-    "You are Mark — the AI marketing co-pilot inside Julieth Tapia Co's (@julitaco3) Mark Hason Command Center.",
+    "You are Marino 007 — the AI marketing co-pilot inside Julieth Tapia Co's (@julitaco3) Mark Hason Command Center.",
     'You help whoever is chatting with you (likely Mark, her manager) think through campaigns and read the connected platforms.',
     '',
     'Current platform status:',
@@ -73,7 +73,7 @@ function buildSystemPrompt() {
 
 async function chat(history) {
   if (!isConfigured()) {
-    throw new Error('Mark is not configured yet — set ANTHROPIC_API_KEY on the backend.');
+    throw new Error('Marino 007 is not configured yet — set ANTHROPIC_API_KEY on the backend.');
   }
 
   const trimmed = history.slice(-MAX_HISTORY_MESSAGES).map((m) => ({ role: m.role, content: m.content }));

@@ -253,7 +253,7 @@ details summary { cursor: pointer; font-size: 0.8rem; color: var(--text-muted); 
 .toast-error { border-color: var(--red); color: var(--red); }
 .toast-success { border-color: var(--green); color: var(--green); }
 
-/* Mark: AI co-pilot chat widget. Bottom-left so it never collides with the
+/* Marino 007: AI co-pilot chat widget. Bottom-left so it never collides with the
    toast stack (bottom-right). */
 .mark-avatar {
   width: 34px;

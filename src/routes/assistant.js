@@ -1,4 +1,4 @@
-// Chat endpoint for "Mark", the AI co-pilot. Same admin-key gate as
+// Chat endpoint for "Marino 007", the AI co-pilot. Same admin-key gate as
 // everything else — this is Mark's (the human's) private tool, not a public
 // chatbot.
 'use strict';
@@ -12,7 +12,7 @@ router.use(requireApiKey);
 
 router.post('/chat', async (req, res) => {
   // Validate the caller's input before checking server-side config — a
-  // malformed request should read the same regardless of whether Mark
+  // malformed request should read the same regardless of whether Marino
   // happens to be configured (see the identical fix in src/platforms/*.js).
   const { messages } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -25,7 +25,7 @@ router.post('/chat', async (req, res) => {
   }
 
   if (!assistant.isConfigured()) {
-    return res.status(400).json({ error: 'Mark is not configured yet — set ANTHROPIC_API_KEY on the backend.' });
+    return res.status(400).json({ error: 'Marino 007 is not configured yet — set ANTHROPIC_API_KEY on the backend.' });
   }
 
   try {

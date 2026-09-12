@@ -333,7 +333,7 @@ document.getElementById('create-campaign-form').addEventListener('submit', async
   }
 });
 
-// ---- Mark: AI co-pilot chat ----
+// ---- Marino 007: AI co-pilot chat ----
 // Chats and can propose a campaign draft via the backend's
 // propose_campaign_draft tool — never creates or activates anything itself.
 // "Open in form" is the only bridge from a draft to a real action, and it
@@ -382,7 +382,7 @@ function renderDraftCard(draft, index) {
 
 function renderMarkMessages() {
   if (markHistory.length === 0) {
-    markMessagesEl.innerHTML = `<p class="mark-msg-empty">Ask Mark about a connected platform, or for a campaign idea.
+    markMessagesEl.innerHTML = `<p class="mark-msg-empty">Ask Marino 007 about a connected platform, or for a campaign idea.
       He can draft a campaign for you to review — he never creates or activates anything himself.</p>`;
     return;
   }

@@ -89,7 +89,7 @@ test('POST /api/assistant/chat requires the admin key like everything else', asy
   assert.equal(status, 401);
 });
 
-test('POST /api/assistant/chat 400s when Mark is not configured', async () => {
+test('POST /api/assistant/chat 400s when Marino 007 is not configured', async () => {
   const { status, body } = await post('/api/assistant/chat', { 'x-api-key': API_KEY }, { messages: [{ role: 'user', content: 'hi' }] });
   assert.equal(status, 400);
   assert.match(body.error, /not configured/i);
