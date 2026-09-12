@@ -32,17 +32,29 @@ The backend URL only answers `GET /` with no key. Every `/auth/*` and
 password (store it in a password manager, don't paste it into chat tools or
 commit it anywhere).
 
-**Only the dashboard auto-deploys** — GitHub Pages rebuilds `docs/`
-automatically on every push that touches it, usually live within a minute
-or two.
+**Both halves auto-deploy on push to `master`, through two different
+mechanisms:**
+- The dashboard (`docs/`) is rebuilt by GitHub Pages automatically on any
+  push that touches it.
+- The backend deploys via `.github/workflows/deploy.yml` — it waits for
+  `.github/workflows/test.yml` to pass, then runs `railway up` using a
+  `RAILWAY_TOKEN` repo secret. (We went this route instead of Railway's own
+  GitHub integration because that needs its GitHub App installed with
+  access to this repo via a one-time browser consent step, which — as this
+  README once incorrectly claimed was already done — is easy to think
+  you've set up when you haven't. A repo secret is easy to verify from the
+  CLI: `gh secret list`.)
 
-**The backend does not auto-deploy yet.** Railway's `service source connect`
-records which repo/branch to build from, but push-triggered deploys need
-Railway's GitHub App actually installed with access to this repo — that's a
-one-time browser consent step only the repo owner can grant (Railway →
-project settings → connect repo, or approve the GitHub App install prompt),
-not something completable via CLI alone. Until that's done, redeploy the
-backend manually after pulling changes:
+To set up or rotate that secret: Railway dashboard → this project →
+Settings → Tokens → create a Project Token scoped to the production
+environment, then:
+
+```bash
+gh secret set RAILWAY_TOKEN --repo losiconosdelabachata-star/mark-hason-command-center
+```
+
+Manual deploy still works any time you want to force one without waiting
+for CI:
 
 ```bash
 railway login      # first time only, on whichever machine is deploying
