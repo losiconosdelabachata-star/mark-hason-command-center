@@ -127,6 +127,22 @@ fields are all strings). Doesn't catch numeric-looking strings (YouTube
 returns stats as strings, for instance) — deliberately conservative rather
 than guessing which strings are metrics.
 
+The Campaigns tab has a "Geographic reach" world map (`jsvectormap`, loaded
+from jsdelivr) that colors countries by ad performance, backed by
+`GET /api/:platform/geo`. **Only Meta has a real implementation** (its
+Insights API's `breakdowns=country` is simple and well-documented) — the
+other campaign-capable platforms' geo-reporting APIs need either an async
+report/poll flow (Pinterest) or a separate geo-target-id-to-country-name
+lookup (Google Ads) that weren't built without a live account to verify
+against, so calling `/geo` on those returns a 501 with a clear message,
+rendered as plain text rather than an empty map. One thing worth knowing if
+you touch this code: `jsvectormap`'s `series.regions[].scale` is an
+*ordinal* lookup (exact value → color), not a continuous gradient — despite
+the option shape suggesting otherwise, there's no real interpolation in
+this library. The gradient you see is computed by hand in `loadGeoMap()`
+(`docs/app.js`): every region's raw metric gets its own pre-interpolated
+color, keyed by that exact value.
+
 ## Why this isn't just a GitHub Pages site
 
 GitHub Pages only serves static files — it cannot run server code or hold
@@ -197,6 +213,7 @@ GET  /api/summary                             → snapshot for every connected p
 GET  /api/:platform/campaigns                 → list existing campaigns
 POST /api/:platform/campaigns                 → create a campaign (always PAUSED — see below)
 POST /api/:platform/campaigns/:id/status      → { "status": "ACTIVE" | "PAUSED" } — the only call that can start spend
+GET  /api/:platform/geo                       → ad performance by country — Meta only for now, others 501
 POST /api/assistant/chat                      → { "messages": [{role, content}] } → { reply, draft? } — chat with Marino 007
 ```
 

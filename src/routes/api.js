@@ -134,6 +134,27 @@ router.post('/:platform/campaigns/:campaignId/status', async (req, res) => {
   }
 });
 
+// GET /api/:platform/geo — ad performance broken down by country, where
+// the platform has it wired up. Currently just Meta (see meta.js) — the
+// others' real geo-report APIs need either an async report/poll flow or an
+// extra id-to-country-name lookup that weren't implemented without a live
+// account to verify against, so they 501 with a clear message instead of
+// silently returning nothing.
+router.get('/:platform/geo', async (req, res) => {
+  const ctx = await resolveConnected(req, res);
+  if (!ctx) return;
+  if (!ctx.platform.getGeoBreakdown) {
+    return res.status(501).json({ error: `${ctx.platform.name} doesn't have a geographic breakdown wired up yet.` });
+  }
+  try {
+    const geo = await ctx.platform.getGeoBreakdown(ctx.tokens);
+    res.json({ platform: ctx.platform.id, geo });
+  } catch (err) {
+    console.error(`[api/${ctx.platform.id}] geo breakdown failed:`, err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
 // GET /api/summary — every connected platform's summary in one call, for a
 // future dashboard to render as one screen. Failures on one platform don't
 // take down the others.

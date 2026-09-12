@@ -82,4 +82,28 @@ module.exports = definePlatform({
       { status }
     );
   },
+
+  /**
+   * Account-wide ad performance broken down by country, last 30 days.
+   * This is the one platform in this codebase with a real geo breakdown
+   * wired up — Meta's Insights `breakdowns=country` param is well-documented
+   * and stable. The other campaign-capable platforms' equivalents need
+   * either an async report/poll flow (Pinterest) or a separate geo-target-id
+   * lookup (Google Ads) that weren't implemented without a live account to
+   * verify against — see README. `country` comes back as an ISO 3166-1
+   * alpha-2 code (e.g. "US"), matching what jsvectormap's world map expects.
+   */
+  async getGeoBreakdown(tokens) {
+    const accountId = requireEnv('META_AD_ACCOUNT_ID', 'Set it to the numeric id shown in Meta Ads Manager account settings.');
+    const res = await apiGet(
+      `https://graph.facebook.com/${GRAPH_VERSION}/act_${accountId}/insights?breakdowns=country&level=account&fields=impressions,clicks,spend&date_preset=last_30d&access_token=${tokens.accessToken}`
+    );
+    // Insights returns numeric fields as strings, same quirk as YouTube.
+    return (res.data || []).map((row) => ({
+      country: row.country,
+      impressions: Number(row.impressions) || 0,
+      clicks: Number(row.clicks) || 0,
+      spend: Number(row.spend) || 0,
+    }));
+  },
 });

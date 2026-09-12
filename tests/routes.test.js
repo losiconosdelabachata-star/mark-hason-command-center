@@ -65,8 +65,8 @@ test('unknown platform returns 404 with a clear message', async () => {
   assert.match(body.error, /Unknown platform/);
 });
 
-test('summary/campaigns routes 400 on an unconfigured platform instead of throwing', async () => {
-  for (const path of ['/api/meta/summary', '/api/meta/campaigns']) {
+test('summary/campaigns/geo routes 400 on an unconfigured platform instead of throwing', async () => {
+  for (const path of ['/api/meta/summary', '/api/meta/campaigns', '/api/meta/geo']) {
     const { status, body } = await get(path, { 'x-api-key': API_KEY });
     assert.equal(status, 400);
     assert.match(body.error, /not configured/);

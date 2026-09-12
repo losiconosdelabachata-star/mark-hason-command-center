@@ -328,6 +328,10 @@ async function loadCampaigns(id) {
         <button class="btn btn-sm" id="pause-btn">Set PAUSED</button>
         <button class="btn btn-danger btn-sm" id="activate-btn">Set ACTIVE (spends money)</button>
       </div>
+      <div style="margin-top:1.1rem;">
+        <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:0.4rem;">Geographic reach (last 30 days)</label>
+        <div id="geo-map-section"><p class="hint">Loading…</p></div>
+      </div>
       <details style="margin-top:1rem;"><summary>Raw response</summary>${prettyJson(data.campaigns)}</details>
     `;
     el.querySelectorAll('[data-fill-id]').forEach((btn) => {
@@ -335,8 +339,76 @@ async function loadCampaigns(id) {
     });
     document.getElementById('pause-btn').addEventListener('click', () => setStatus(id, 'PAUSED'));
     document.getElementById('activate-btn').addEventListener('click', () => setStatus(id, 'ACTIVE'));
+    loadGeoMap(id);
   } catch (err) {
     el.innerHTML = `<p class="hint">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+// jsvectormap's `series.regions[].scale` is an ORDINAL lookup (exact value
+// -> color), not a continuous gradient — there's no normalizeFunction/range
+// interpolation in this library despite the option existing in its config
+// shape. So the gradient has to be computed by hand: bucket every region's
+// raw value to its own pre-computed color, keyed by that exact value, and
+// let the ordinal lookup do the rest. (Found this the hard way — the first
+// version rendered every region solid black because scale.getValue(12000)
+// on a 2-element array is just array[12000], i.e. undefined.)
+function lerpColor(hexA, hexB, t) {
+  const a = hexA.match(/\w\w/g).map((h) => parseInt(h, 16));
+  const b = hexB.match(/\w\w/g).map((h) => parseInt(h, 16));
+  return `#${a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
+}
+
+// Country-level ad reach map. Only Meta has this wired up on the backend
+// (see backend README) — every other platform's /geo call 501s with a
+// clear message, rendered here as plain text rather than an empty map.
+async function loadGeoMap(id) {
+  const container = document.getElementById('geo-map-section');
+  if (!container) return; // tab switched away before this resolved
+  try {
+    const data = await api(`/api/${id}/geo`);
+    const geo = data.geo || [];
+    if (!geo.length) {
+      container.innerHTML = '<p class="hint">No geographic data in the last 30 days.</p>';
+      return;
+    }
+
+    const metricOf = (row) => row.impressions ?? row.clicks ?? row.spend ?? 0;
+    const nums = geo.map(metricOf);
+    const min = Math.min(...nums);
+    const max = Math.max(...nums);
+    const lowColor = themeColor('--surface-2');
+    const highColor = themeColor('--accent');
+
+    const values = {};
+    const scale = {}; // ordinal lookup: exact raw value -> its interpolated color
+    for (const row of geo) {
+      if (!row.country) continue;
+      const v = metricOf(row);
+      values[row.country] = v;
+      const t = max === min ? 1 : (v - min) / (max - min);
+      scale[v] = lerpColor(lowColor, highColor, t);
+    }
+
+    container.innerHTML = '<div id="geo-map-canvas" style="height:280px;"></div>';
+    window.jsVectorMap({
+      selector: '#geo-map-canvas',
+      map: 'world',
+      backgroundColor: 'transparent',
+      zoomButtons: false,
+      regionStyle: {
+        initial: { fill: themeColor('--gray-bg'), stroke: themeColor('--border') },
+        hover: { fill: themeColor('--mark') },
+      },
+      series: { regions: [{ values, scale, attribute: 'fill' }] },
+      onRegionTooltipShow(event, tooltip, code) {
+        if (values[code] != null) tooltip.text(`${tooltip.text()}: ${values[code].toLocaleString()} impressions`, false);
+      },
+    });
+  } catch (err) {
+    // A 501 ("not wired up for this platform") reads the same as any other
+    // error here — plain, honest text, no broken empty map underneath it.
+    container.innerHTML = `<p class="hint">${escapeHtml(err.message)}</p>`;
   }
 }
 

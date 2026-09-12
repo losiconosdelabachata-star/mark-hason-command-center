@@ -97,3 +97,17 @@ test('setCampaignStatus rejects an invalid status value for every platform that 
     );
   }
 });
+
+test('only meta has a geo breakdown wired up — reflects real, not aspirational, state', () => {
+  assert.equal(typeof platforms.get('meta').getGeoBreakdown, 'function');
+  for (const id of ['google', 'reddit', 'pinterest', 'linkedin', 'snapchat', 'tiktok', 'twitter', 'twitch', 'kick']) {
+    assert.equal(platforms.get(id).getGeoBreakdown, undefined, `${id} should not claim geo support it doesn't have`);
+  }
+});
+
+test("meta's getGeoBreakdown fails with a clear env-var message when the ad account id is missing", async () => {
+  await assert.rejects(
+    () => platforms.get('meta').getGeoBreakdown({ accessToken: 'fake' }),
+    /META_AD_ACCOUNT_ID is not set/
+  );
+});
