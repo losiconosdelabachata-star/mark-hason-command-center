@@ -239,6 +239,10 @@ function updateDemoUI() {
   const on = isDemoMode();
   document.getElementById('demo-banner').hidden = !on;
   document.getElementById('exit-demo-btn').hidden = !on;
+  // Always-visible way into the demo, independent of whether a real key is
+  // already saved — the key-gate's own "View live demo" button only exists
+  // on that screen, which is skipped entirely once a real key is cached.
+  document.getElementById('view-demo-topbar-btn').hidden = on;
 }
 
 function enterDemoMode() {
@@ -254,6 +258,7 @@ function exitDemoMode() {
 }
 
 document.getElementById('view-demo-btn').addEventListener('click', enterDemoMode);
+document.getElementById('view-demo-topbar-btn').addEventListener('click', enterDemoMode);
 document.getElementById('exit-demo-btn').addEventListener('click', exitDemoMode);
 document.getElementById('demo-banner-exit').addEventListener('click', exitDemoMode);
 
@@ -343,7 +348,12 @@ async function loadOverview(platforms) {
       const metric = headlineMetric(entry.summary);
       if (!metric) continue;
       totalReach += metric.value;
-      chartRows.push({ label: p.name, value: metric.value });
+      // Chart.js's y-axis clips long labels from the start rather than
+      // eliding them, so "Google (YouTube, Google Ads, AdSense)" rendered
+      // as ", Google Ads, AdSense)" — strip the parenthetical for the
+      // compact chart specifically; full names stay everywhere else (card
+      // titles, modal headers, etc).
+      chartRows.push({ label: p.name.replace(/\s*\(.*\)$/, ''), value: metric.value });
       const slot = document.querySelector(`[data-metric-for="${p.id}"]`);
       if (slot) {
         const shortLabel = metric.label.split(/[. ]/).pop().replace(/_/g, ' ');
@@ -354,6 +364,13 @@ async function loadOverview(platforms) {
 
     if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
     if (chartRows.length && window.Chart) {
+      // Horizontal bars, same as the per-platform Analytics chart — with up
+      // to 10 platforms, vertical bars either crush long platform names
+      // into unreadable rotated labels or Chart.js just hides most of them
+      // (autoSkip), which is what happened here on a phone-width screen
+      // before this fix. Horizontal labels have the full card width to
+      // breathe in, so every platform stays legible regardless of screen size.
+      document.getElementById('overview-chart').parentElement.style.height = `${Math.max(160, chartRows.length * 34)}px`;
       overviewChart = new Chart(document.getElementById('overview-chart'), {
         type: 'bar',
         data: {
@@ -361,11 +378,12 @@ async function loadOverview(platforms) {
           datasets: [{ data: chartRows.map((r) => r.value), backgroundColor: themeColor('--accent'), borderRadius: 6 }],
         },
         options: {
+          indexAxis: 'y',
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { ticks: { color: themeColor('--text-muted') }, grid: { display: false } },
-            y: { beginAtZero: true, ticks: { color: themeColor('--text-muted') }, grid: { color: themeColor('--border') } },
+            x: { beginAtZero: true, ticks: { color: themeColor('--text-muted') }, grid: { color: themeColor('--border') } },
+            y: { ticks: { color: themeColor('--text-muted') }, grid: { display: false } },
           },
         },
       });
@@ -833,6 +851,21 @@ markForm.addEventListener('submit', async (e) => {
   const rest = params.toString();
   const cleanUrl = window.location.pathname + (rest ? `?${rest}` : '') + window.location.hash;
   window.history.replaceState({}, '', cleanUrl);
+})();
+
+// ?demo=1 always drops straight into demo mode, regardless of whatever real
+// key might already be saved in this browser — the "View live demo" button
+// only exists on the key-gate screen, so a browser with a real key already
+// saved (e.g. from earlier testing) would otherwise have no visible way
+// back into the demo at all. This link works every time, from a clean
+// slate.
+(function consumeDemoLink() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('demo') !== '1') return;
+  params.delete('demo');
+  const rest = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : '') + window.location.hash);
+  setDemoMode(true);
 })();
 
 refresh();

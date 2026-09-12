@@ -174,7 +174,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
   border-radius: 14px;
   padding: 1.2rem 1.4rem;
   box-shadow: var(--shadow);
-  height: 220px;
+  height: 160px; /* JS sets the real height once it knows the row count */
 }
 
 .card-metric {
@@ -349,6 +349,15 @@ details summary { cursor: pointer; font-size: 0.8rem; color: var(--text-muted); 
 }
 .mark-launcher .mark-avatar { width: 44px; height: 44px; font-size: 1.1rem; }
 .mark-launcher:hover { transform: translateY(-1px); }
+
+/* Smaller footprint on phones/tablets — a fixed corner button always sits
+   over *some* scrolled content by nature, so this reduces how much rather
+   than trying to eliminate it (not achievable for a fixed launcher, and
+   every chat-widget pattern works this same way). */
+@media (max-width: 820px) {
+  .mark-launcher { width: 44px; height: 44px; bottom: 1rem; left: 1rem; }
+  .mark-launcher .mark-avatar { width: 34px; height: 34px; font-size: 0.9rem; }
+}
 
 .mark-panel {
   position: fixed;
