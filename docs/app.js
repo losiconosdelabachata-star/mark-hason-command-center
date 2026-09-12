@@ -22,6 +22,8 @@ const CAMPAIGN_HINTS = {
   snapchat: { hint: 'Required: objective (e.g. AWARENESS, APP_INSTALLS, WEB_CONVERSIONS)', placeholder: '{\n  "objective": "AWARENESS"\n}' },
   tiktok: { hint: 'Not available yet — TikTok Ads needs a separate TikTok-for-Business connection. See README.', placeholder: '', disabled: true },
   twitter: { hint: 'Not available yet — X Ads API uses OAuth 1.0a, a separate connection from X analytics. See README.', placeholder: '', disabled: true },
+  twitch: { hint: "Not available — Twitch has no public self-serve ads/campaign API. This connection is analytics-only.", placeholder: '', disabled: true },
+  kick: { hint: "Not available — Kick has no public ads/campaign API. This connection is analytics-only.", placeholder: '', disabled: true },
 };
 
 // ---- tiny state + storage helpers ----
@@ -238,12 +240,61 @@ function escapeHtml(str) {
   return str.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// Best-effort: walk a summary object (up to 2 levels of nested objects,
+// arrays skipped — charting arbitrary array contents generically gets messy
+// fast) collecting real numeric leaf values, so whatever numbers a platform
+// actually returns get a chart for free with no per-platform chart code.
+// Doesn't catch numeric-looking strings (e.g. YouTube's stats-as-strings) —
+// deliberately conservative rather than guessing which strings are metrics.
+function extractNumericFields(obj, prefix = '', depth = 0, out = []) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj) || depth > 2) return out;
+  for (const [key, value] of Object.entries(obj)) {
+    const label = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      out.push({ label, value });
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      extractNumericFields(value, label, depth + 1, out);
+    }
+  }
+  return out;
+}
+
+function themeColor(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+let summaryChart = null; // Chart.js instance — destroy before replacing, or it errors on re-render
+
 async function loadSummary(id) {
   const el = document.getElementById('summary-content');
   el.innerHTML = '<p class="hint">Loading…</p>';
+  if (summaryChart) { summaryChart.destroy(); summaryChart = null; }
   try {
     const data = await api(`/api/${id}/summary`);
-    el.innerHTML = prettyJson(data.summary);
+    const numeric = extractNumericFields(data.summary);
+    el.innerHTML = `
+      ${numeric.length ? '<canvas id="summary-chart" height="140" role="img" aria-label="Chart of numeric analytics fields"></canvas>' : ''}
+      <details ${numeric.length ? '' : 'open'} style="margin-top:${numeric.length ? '1rem' : '0'};">
+        <summary>Raw response</summary>${prettyJson(data.summary)}
+      </details>
+    `;
+    if (numeric.length && window.Chart) {
+      summaryChart = new Chart(document.getElementById('summary-chart'), {
+        type: 'bar',
+        data: {
+          labels: numeric.map((n) => n.label),
+          datasets: [{ data: numeric.map((n) => n.value), backgroundColor: themeColor('--accent'), borderRadius: 4 }],
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, ticks: { color: themeColor('--text-muted') }, grid: { color: themeColor('--border') } },
+            y: { ticks: { color: themeColor('--text') }, grid: { display: false } },
+          },
+        },
+      });
+    }
   } catch (err) {
     el.innerHTML = `<p class="hint">${escapeHtml(err.message)}</p>`;
   }

@@ -5,9 +5,9 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const platforms = require('../src/platforms');
 
-test('all 8 expected platforms are registered with unique ids', () => {
+test('all 10 expected platforms are registered with unique ids', () => {
   const ids = platforms.all.map((p) => p.id).sort();
-  assert.deepEqual(ids, ['google', 'linkedin', 'meta', 'pinterest', 'reddit', 'snapchat', 'tiktok', 'twitter']);
+  assert.deepEqual(ids, ['google', 'kick', 'linkedin', 'meta', 'pinterest', 'reddit', 'snapchat', 'tiktok', 'twitch', 'twitter']);
 });
 
 test('every platform exposes the required interface', () => {
@@ -75,9 +75,20 @@ test('tiktok and twitter campaign methods explain the auth mismatch instead of a
   }
 });
 
+test('twitch and kick campaign methods explain there is no public ads API instead of attempting a call', async () => {
+  for (const id of ['twitch', 'kick']) {
+    const platform = platforms.get(id);
+    await assert.rejects(() => platform.listCampaigns(), /public.*(ads|campaign)/i);
+    await assert.rejects(() => platform.createCampaign(), /public.*(ads|campaign)/i);
+    await assert.rejects(() => platform.setCampaignStatus(), /public.*(ads|campaign)/i);
+  }
+});
+
+const NO_CAMPAIGN_SUPPORT = ['tiktok', 'twitter', 'twitch', 'kick'];
+
 test('setCampaignStatus rejects an invalid status value for every platform that supports it', async () => {
   const fakeTokens = { accessToken: 'fake' };
-  const supported = platforms.all.filter((p) => !['tiktok', 'twitter'].includes(p.id));
+  const supported = platforms.all.filter((p) => !NO_CAMPAIGN_SUPPORT.includes(p.id));
   for (const platform of supported) {
     await assert.rejects(
       () => platform.setCampaignStatus(fakeTokens, 'id123', 'NOT_A_REAL_STATUS'),

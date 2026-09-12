@@ -34,10 +34,10 @@ async function post(path, headers, body) {
   return { status: res.status, body: await res.json() };
 }
 
-test('GET / is public and lists all 8 platforms', async () => {
+test('GET / is public and lists all 10 platforms', async () => {
   const { status, body } = await get('/');
   assert.equal(status, 200);
-  assert.equal(body.platforms.length, 8);
+  assert.equal(body.platforms.length, 10);
 });
 
 test('protected routes reject requests with no x-api-key header', async () => {
@@ -55,7 +55,7 @@ test('protected routes reject the wrong key', async () => {
 test('GET /api/status with the correct key lists every platform as configured:false', async () => {
   const { status, body } = await get('/api/status', { 'x-api-key': API_KEY });
   assert.equal(status, 200);
-  assert.equal(body.platforms.length, 8);
+  assert.equal(body.platforms.length, 10);
   assert.ok(body.platforms.every((p) => p.configured === false && p.connected === false));
 });
 

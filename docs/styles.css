@@ -6,47 +6,51 @@
 [hidden] { display: none !important; }
 
 :root {
-  --bg: #f5f6f8;
+  /* Warm neutrals + a palette pulled from Julieth's actual work (the
+     coral/pink and teal running through her floral pieces) instead of a
+     generic cool-grey/blue SaaS look. */
+  --bg: #fbf6f1;
   --surface: #ffffff;
-  --surface-2: #f0f1f4;
-  --border: #e2e4e9;
-  --text: #16181d;
-  --text-muted: #666c78;
-  --accent: #2563eb;
+  --surface-2: #f5ede4;
+  --border: #eae0d3;
+  --text: #2b211d;
+  --text-muted: #7a6b61;
+  --accent: #e23f73;
   --accent-contrast: #ffffff;
-  --green: #16a34a;
-  --green-bg: #e8f8ee;
-  --yellow: #b45309;
-  --yellow-bg: #fef3e2;
-  --red: #dc2626;
-  --red-bg: #fdecec;
-  --gray: #6b7280;
-  --gray-bg: #eef0f3;
-  --mark: #c2540c;
-  --mark-bg: #fdf1e7;
-  --shadow: 0 1px 2px rgba(16, 20, 30, 0.06), 0 8px 24px rgba(16, 20, 30, 0.06);
+  --green: #1a8f5f;
+  --green-bg: #e6f5ec;
+  --yellow: #b8791a;
+  --yellow-bg: #fbf0de;
+  --red: #d93636;
+  --red-bg: #fcecea;
+  --gray: #8a7a6e;
+  --gray-bg: #f1e7dd;
+  --mark: #0e7a72;
+  --mark-bg: #e3f3f1;
+  --shadow: 0 1px 2px rgba(43, 33, 29, 0.05), 0 8px 24px rgba(43, 33, 29, 0.07);
+  --shadow-hover: 0 2px 4px rgba(43, 33, 29, 0.06), 0 12px 28px rgba(43, 33, 29, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1115;
-    --surface: #171a21;
-    --surface-2: #1e2129;
-    --border: #2a2e38;
-    --text: #eef0f3;
-    --text-muted: #9aa1ad;
-    --accent: #5b8def;
-    --accent-contrast: #0f1115;
-    --green: #4ade80;
-    --green-bg: #133523;
-    --yellow: #fbbf24;
-    --yellow-bg: #3a2c0e;
-    --red: #f87171;
-    --red-bg: #3a1616;
-    --gray: #9aa1ad;
-    --gray-bg: #21242c;
-    --mark: #f0975a;
-    --mark-bg: #3a2412;
+    --bg: #1e1613;
+    --surface: #2a211c;
+    --surface-2: #362b24;
+    --border: #473a31;
+    --text: #f5eae0;
+    --text-muted: #b3a192;
+    --accent: #ff6f9c;
+    --accent-contrast: #1e1613;
+    --green: #4ade94;
+    --green-bg: #1c3327;
+    --yellow: #f0b84d;
+    --yellow-bg: #3a2c12;
+    --red: #ff7b72;
+    --red-bg: #3a1d1b;
+    --gray: #b3a192;
+    --gray-bg: #362b24;
+    --mark: #4fd0c4;
+    --mark-bg: #163431;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
@@ -61,6 +65,15 @@ body {
 }
 
 a { color: var(--accent); }
+
+/* A characterful display serif for headings only — body/UI text stays on
+   the clean system-sans stack below. Fraunces nods to the hand-crafted,
+   artisan quality of Julieth's own work without turning a working tool
+   into a poster. */
+h1, h2, h3, .card-head h3, .mark-panel-title {
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  text-wrap: balance;
+}
 
 .topbar {
   display: flex;
@@ -144,7 +157,9 @@ main { max-width: 1080px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+.card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(43, 33, 29, 0.06), 0 12px 28px rgba(43, 33, 29, 0.1); }
 
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
 .card-head h3 { margin: 0; font-size: 1rem; }

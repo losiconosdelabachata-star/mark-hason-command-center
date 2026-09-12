@@ -1,15 +1,15 @@
-# Mark Hason Command Center — backend
+# Mark Hason Command Center
 
-A single backend that connects Julieth Tapia Co's (@julitaco3) marketing
-accounts — Meta (Facebook/Instagram), Google (YouTube, Google Ads, AdSense),
-Reddit, Pinterest, TikTok, X, LinkedIn, and Snapchat — through each
-platform's real OAuth2 flow, and exposes one consistent API for pulling
-analytics summaries.
+A single dashboard + backend that connects Julieth Tapia Co's (@julitaco3)
+marketing and streaming accounts — Meta (Facebook/Instagram), Google
+(YouTube, Google Ads, AdSense), Reddit, Pinterest, TikTok, X, LinkedIn,
+Snapchat, Twitch, and Kick — through each platform's real OAuth2 flow, plus
+"Marino 007," an AI co-pilot who can chat and draft campaigns for review.
 
-**This repo is the backend/API only.** It has no UI yet — the dashboard
-frontend for Mark to actually look at is a separate piece of work, built
-once this backend is deployed and at least one platform is connected end to
-end. See [Architecture](#architecture) for why they're split.
+The repo has two halves that deploy separately (see
+[Architecture](#architecture) for why): `docs/` is the static dashboard
+(GitHub Pages), everything else is the API/OAuth backend (Railway). Both
+are covered below.
 
 ## Live deployment
 
@@ -109,6 +109,24 @@ Configure with `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`, default
 not configured instead of failing silently. See `src/assistant.js` for the
 system prompt and tool definition.
 
+## Dashboard design
+
+The palette (`docs/styles.css` tokens) is pulled from Julieth's actual work
+— a warm cream/near-black base instead of generic cool grey, a coral-pink
+primary accent, Marino getting his own distinct teal — plus Fraunces for
+headings only, paired with the existing system-sans for body/UI text. Both
+light and dark themes are token-driven from `prefers-color-scheme`, no
+toggle needed.
+
+The Analytics tab in each platform's detail modal auto-charts whatever
+numeric fields that platform's `getSummary()` actually returns (via
+Chart.js, loaded from cdnjs) — no per-platform chart code, so it works for
+any future platform for free. Falls back to just the raw-JSON view when a
+summary has no top-level/nested numeric values (e.g. LinkedIn's profile
+fields are all strings). Doesn't catch numeric-looking strings (YouTube
+returns stats as strings, for instance) — deliberately conservative rather
+than guessing which strings are metrics.
+
 ## Why this isn't just a GitHub Pages site
 
 GitHub Pages only serves static files — it cannot run server code or hold
@@ -152,7 +170,7 @@ link to where to register a developer app. In short, for every platform:
 4. Restart the server, then visit (with your API key) `/auth/<platform-id>/start`.
 
 Platform ids: `meta`, `google`, `reddit`, `pinterest`, `tiktok`, `twitter`,
-`linkedin`, `snapchat`.
+`linkedin`, `snapchat`, `twitch`, `kick`.
 
 Several platforms (Meta ads scopes, Google Ads, LinkedIn Marketing,
 Snapchat, TikTok Business) require a business-verification / app-review step
@@ -208,6 +226,8 @@ platform's current docs the first time you actually connect it):
 | snapchat  | `name`, `objective` |
 | tiktok    | not wired up — see note below |
 | twitter   | not wired up — see note below |
+| twitch    | no campaign API exists — see note below |
+| kick      | no campaign API exists — see note below |
 
 **TikTok and X/Twitter campaign endpoints deliberately throw an explanatory
 error instead of a fake success.** Their Ads APIs authenticate completely
@@ -217,6 +237,13 @@ OAuth 1.0a, not the OAuth 2.0 token used for X analytics). Wiring those up
 is a distinct, small follow-up once Mark decides he actually wants ads on
 those two specifically — flagged here rather than silently built as
 something that would fail confusingly later.
+
+**Twitch and Kick have no campaign endpoints at all, on purpose.** Neither
+platform has a public self-serve ads/campaign API to wire up — Twitch's
+monetization (subs, bits, automatically inserted channel ads) and Kick's
+newer, streaming-focused API just don't have that concept. Both connections
+are analytics-only; `listCampaigns`/`createCampaign`/`setCampaignStatus` all
+throw a clear explanation rather than pretending otherwise.
 
 Every platform also needs its ad-account id set in `.env` before campaign
 routes work at all (`META_AD_ACCOUNT_ID`, `GOOGLE_ADS_CUSTOMER_ID`, etc. —
@@ -286,16 +313,20 @@ redirect URI registration to match before reconnecting.
 
 ## Roadmap
 
-1. ✅ OAuth + encrypted token storage + read-only analytics summaries.
+1. ✅ OAuth + encrypted token storage + read-only analytics summaries, for
+   all 10 platforms.
 2. ✅ Campaign create/list/activate endpoints for Meta, Google Ads, Reddit,
    Pinterest, LinkedIn, Snapchat — paused-by-default, one explicit call to
    go live.
-3. Pick which platforms Julieth/Mark actually want live (all 8 are
-   scaffolded for analytics; 6 of 8 for campaigns — not all need real
-   credentials right away).
-4. Deploy the backend somewhere with secret support (Render/Railway/Vercel).
-5. Build the dashboard frontend (separate piece, per your earlier direction)
-   that calls this backend's `/api/summary` and campaign endpoints.
-6. If needed: TikTok-for-Business and X Ads API (OAuth 1.0a) connections,
-   which are structurally separate from the analytics connections already
-   built for those two platforms.
+3. ✅ Backend deployed (Railway) and dashboard deployed (GitHub Pages), both
+   auto-deploying on push.
+4. ✅ Dashboard UI: platform grid, per-platform analytics/campaigns/create
+   panels, auto-charted numeric fields, Marino 007 (AI co-pilot, drafts
+   only), Julieth's branding throughout, magic-link personal logins.
+5. **Next up, and the one that actually matters:** get real credentials for
+   at least one platform (`.env.example` + the setup runbook have the exact
+   steps) — everything above works safely with zero data until this
+   happens.
+6. If needed later: TikTok-for-Business and X Ads API (OAuth 1.0a)
+   connections, structurally separate from the analytics connections
+   already built for those two platforms.
