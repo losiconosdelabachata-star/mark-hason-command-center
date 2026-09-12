@@ -1,3 +1,10 @@
+/* Several elements below set their own `display` (grid/flex) for when
+   they're shown, which has the same CSS specificity as the browser's
+   default `[hidden]{display:none}` and comes later in the cascade — so
+   without this, toggling `.hidden = true` on those elements silently does
+   nothing once they have content. This restores `hidden` actually hiding. */
+[hidden] { display: none !important; }
+
 :root {
   --bg: #f5f6f8;
   --surface: #ffffff;
@@ -15,6 +22,8 @@
   --red-bg: #fdecec;
   --gray: #6b7280;
   --gray-bg: #eef0f3;
+  --mark: #c2540c;
+  --mark-bg: #fdf1e7;
   --shadow: 0 1px 2px rgba(16, 20, 30, 0.06), 0 8px 24px rgba(16, 20, 30, 0.06);
 }
 
@@ -36,6 +45,8 @@
     --red-bg: #3a1616;
     --gray: #9aa1ad;
     --gray-bg: #21242c;
+    --mark: #f0975a;
+    --mark-bg: #3a2412;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
@@ -237,3 +248,129 @@ details summary { cursor: pointer; font-size: 0.8rem; color: var(--text-muted); 
 }
 .toast-error { border-color: var(--red); color: var(--red); }
 .toast-success { border-color: var(--green); color: var(--green); }
+
+/* Mark: AI co-pilot chat widget. Bottom-left so it never collides with the
+   toast stack (bottom-right). */
+.mark-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--mark), #f2b134);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.mark-launcher {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+}
+.mark-launcher .mark-avatar { width: 44px; height: 44px; font-size: 1.1rem; }
+.mark-launcher:hover { transform: translateY(-1px); }
+
+.mark-panel {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  width: min(380px, calc(100vw - 2.5rem));
+  height: min(560px, calc(100vh - 2.5rem));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 95;
+}
+
+.mark-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mark-panel-heading { flex: 1; min-width: 0; }
+.mark-panel-title { font-weight: 700; font-size: 0.95rem; }
+.mark-panel-sub { font-size: 0.72rem; color: var(--text-muted); }
+
+.mark-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.mark-msg { display: flex; gap: 0.55rem; max-width: 100%; }
+.mark-msg .mark-avatar { width: 26px; height: 26px; font-size: 0.7rem; }
+.mark-msg-bubble {
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.87rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.mark-msg-user { flex-direction: row-reverse; }
+.mark-msg-user .mark-msg-bubble { background: var(--accent); color: var(--accent-contrast); }
+.mark-msg-user .mark-avatar { background: var(--gray-bg); color: var(--text); }
+.mark-msg-error .mark-msg-bubble { background: var(--red-bg); color: var(--red); }
+.mark-msg-empty { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 2rem; }
+
+.mark-draft {
+  border: 1px solid var(--mark);
+  background: var(--mark-bg);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  font-size: 0.83rem;
+  min-width: 0;
+}
+.mark-draft-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--mark); margin-bottom: 0.35rem; }
+.mark-draft dl { margin: 0.4rem 0 0; display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.6rem; font-size: 0.8rem; }
+.mark-draft dt { color: var(--text-muted); }
+.mark-draft dd { margin: 0; font-family: ui-monospace, monospace; word-break: break-word; }
+.mark-draft-actions { margin-top: 0.6rem; }
+
+.mark-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mark-form textarea {
+  flex: 1;
+  resize: none;
+  font: inherit;
+  font-size: 0.87rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  max-height: 6rem;
+}
+.mark-form button { align-self: flex-end; }

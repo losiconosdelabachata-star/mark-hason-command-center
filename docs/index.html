@@ -90,6 +90,28 @@
 
   <div id="toast-container" aria-live="polite"></div>
 
+  <!-- Mark: the AI co-pilot. Chats and can propose campaign drafts, never
+       creates or activates anything himself — see docs/app.js. -->
+  <button id="mark-launcher" class="mark-launcher" title="Chat with Mark">
+    <span class="mark-avatar">M</span>
+  </button>
+
+  <div id="mark-panel" class="mark-panel" hidden>
+    <div class="mark-panel-head">
+      <span class="mark-avatar">M</span>
+      <div class="mark-panel-heading">
+        <div class="mark-panel-title">Mark</div>
+        <div class="mark-panel-sub">AI co-pilot · drafts only, never executes</div>
+      </div>
+      <button id="mark-close" class="btn btn-ghost" aria-label="Close chat">✕</button>
+    </div>
+    <div id="mark-messages" class="mark-messages"></div>
+    <form id="mark-form" class="mark-form">
+      <textarea id="mark-input" placeholder="Ask Mark about a platform, or for a campaign idea…" rows="1"></textarea>
+      <button type="submit" class="btn btn-primary btn-sm">Send</button>
+    </form>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

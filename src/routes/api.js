@@ -6,6 +6,7 @@ const express = require('express');
 const platforms = require('../platforms');
 const oauth = require('../oauthClient');
 const tokenStore = require('../tokenStore');
+const assistant = require('../assistant');
 const requireApiKey = require('../middleware/requireApiKey');
 
 const router = express.Router();
@@ -37,6 +38,7 @@ router.get('/status', (req, res) => {
       configured: p.isConfigured(),
       connected: connected.has(p.id),
     })),
+    assistant: { configured: assistant.isConfigured() },
   });
 });
 

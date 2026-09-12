@@ -6,8 +6,10 @@ const express = require('express');
 const cors = require('cors');
 
 const platforms = require('./src/platforms');
+const assistant = require('./src/assistant');
 const authRoutes = require('./src/routes/auth');
 const apiRoutes = require('./src/routes/api');
+const assistantRoutes = require('./src/routes/assistant');
 
 const app = express();
 app.use(cors());
@@ -18,11 +20,15 @@ app.get('/', (req, res) => {
     name: 'Mark Hason Command Center — backend',
     status: 'ok',
     platforms: platforms.all.map((p) => ({ id: p.id, name: p.name, configured: p.isConfigured() })),
+    assistant: { configured: assistant.isConfigured() },
     note: 'This is the API/OAuth backend only. The dashboard frontend is built separately.',
   });
 });
 
 app.use('/auth', authRoutes);
+// More specific mount first — apiRoutes has a catch-all-ish /:platform/*
+// pattern that would otherwise need to fall through on every request here.
+app.use('/api/assistant', assistantRoutes);
 app.use('/api', apiRoutes);
 
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));

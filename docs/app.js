@@ -333,5 +333,119 @@ document.getElementById('create-campaign-form').addEventListener('submit', async
   }
 });
 
+// ---- Mark: AI co-pilot chat ----
+// Chats and can propose a campaign draft via the backend's
+// propose_campaign_draft tool — never creates or activates anything itself.
+// "Open in form" is the only bridge from a draft to a real action, and it
+// just pre-fills the same create-campaign form a human would fill in by
+// hand; submitting it is still a separate, manual click.
+
+const LS_MARK_HISTORY = 'mhc_mark_history';
+const markPanel = document.getElementById('mark-panel');
+const markMessagesEl = document.getElementById('mark-messages');
+const markForm = document.getElementById('mark-form');
+const markInput = document.getElementById('mark-input');
+
+let markHistory = [];
+try { markHistory = JSON.parse(localStorage.getItem(LS_MARK_HISTORY) || '[]'); } catch { markHistory = []; }
+
+function saveMarkHistory() {
+  try { localStorage.setItem(LS_MARK_HISTORY, JSON.stringify(markHistory)); } catch { /* per-viewer convenience only */ }
+}
+
+function openDraftInForm(draft) {
+  if (!draft?.platform) return;
+  openDetail(draft.platform);
+  document.querySelector('.tab-btn[data-tab="create"]').click();
+  document.getElementById('campaign-name').value = draft.name || '';
+  document.getElementById('campaign-extra').value = draft.fields ? JSON.stringify(draft.fields, null, 2) : '';
+  markPanel.hidden = true;
+}
+
+function renderDraftCard(draft, index) {
+  const platform = statusCache.find((p) => p.id === draft.platform);
+  const fields = Object.entries(draft.fields || {});
+  return `
+    <div class="mark-draft">
+      <div class="mark-draft-label">Campaign draft — ${escapeHtml(platform?.name || draft.platform)}</div>
+      <dl>
+        <dt>Name</dt><dd>${escapeHtml(draft.name || '')}</dd>
+        ${fields.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd>`).join('')}
+      </dl>
+      ${draft.rationale ? `<p class="hint" style="margin-top:.4rem;">${escapeHtml(draft.rationale)}</p>` : ''}
+      <div class="mark-draft-actions">
+        <button type="button" class="btn btn-primary btn-sm" data-draft-index="${index}">Open in form</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderMarkMessages() {
+  if (markHistory.length === 0) {
+    markMessagesEl.innerHTML = `<p class="mark-msg-empty">Ask Mark about a connected platform, or for a campaign idea.
+      He can draft a campaign for you to review — he never creates or activates anything himself.</p>`;
+    return;
+  }
+  markMessagesEl.innerHTML = markHistory.map((msg, i) => {
+    const isUser = msg.role === 'user';
+    return `
+      <div class="mark-msg ${isUser ? 'mark-msg-user' : msg.error ? 'mark-msg-error' : ''}">
+        <span class="mark-avatar">${isUser ? 'Y' : 'M'}</span>
+        <div style="min-width:0;">
+          <div class="mark-msg-bubble">${escapeHtml(msg.content)}</div>
+          ${msg.draft ? renderDraftCard(msg.draft, i) : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  markMessagesEl.querySelectorAll('[data-draft-index]').forEach((btn) => {
+    btn.addEventListener('click', () => openDraftInForm(markHistory[Number(btn.dataset.draftIndex)]?.draft));
+  });
+  markMessagesEl.scrollTop = markMessagesEl.scrollHeight;
+}
+
+document.getElementById('mark-launcher').addEventListener('click', () => {
+  markPanel.hidden = !markPanel.hidden;
+  if (!markPanel.hidden) { renderMarkMessages(); markInput.focus(); }
+});
+document.getElementById('mark-close').addEventListener('click', () => { markPanel.hidden = true; });
+
+markInput.addEventListener('input', () => {
+  markInput.style.height = 'auto';
+  markInput.style.height = Math.min(markInput.scrollHeight, 96) + 'px';
+});
+markInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); markForm.requestSubmit(); }
+});
+
+markForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = markInput.value.trim();
+  if (!text) return;
+
+  markHistory.push({ role: 'user', content: text });
+  markInput.value = '';
+  markInput.style.height = 'auto';
+  const thinkingIndex = markHistory.length;
+  markHistory.push({ role: 'assistant', content: '…' });
+  saveMarkHistory();
+  renderMarkMessages();
+
+  const submitBtn = markForm.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  try {
+    const payload = markHistory
+      .filter((m, i) => i !== thinkingIndex && !m.error)
+      .map((m) => ({ role: m.role, content: m.content }));
+    const { reply, draft } = await api('/api/assistant/chat', { method: 'POST', body: { messages: payload } });
+    markHistory[thinkingIndex] = { role: 'assistant', content: reply || '(no reply)', draft };
+  } catch (err) {
+    markHistory[thinkingIndex] = { role: 'assistant', content: err.message, error: true };
+  }
+  submitBtn.disabled = false;
+  saveMarkHistory();
+  renderMarkMessages();
+});
+
 // ---- boot ----
 refresh();

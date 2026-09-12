@@ -73,6 +73,38 @@ test('summary/campaigns routes 400 on an unconfigured platform instead of throwi
   }
 });
 
+test('GET /api/status includes assistant.configured', async () => {
+  // Arrange: clean test env has no ANTHROPIC_API_KEY (see tests/helpers/setupEnv.js)
+  // Act
+  const { status, body } = await get('/api/status', { 'x-api-key': API_KEY });
+  // Assert
+  assert.equal(status, 200);
+  assert.equal(body.assistant.configured, false);
+});
+
+test('POST /api/assistant/chat requires the admin key like everything else', async () => {
+  // Arrange/Act
+  const { status } = await post('/api/assistant/chat', {}, { messages: [{ role: 'user', content: 'hi' }] });
+  // Assert
+  assert.equal(status, 401);
+});
+
+test('POST /api/assistant/chat 400s when Mark is not configured', async () => {
+  const { status, body } = await post('/api/assistant/chat', { 'x-api-key': API_KEY }, { messages: [{ role: 'user', content: 'hi' }] });
+  assert.equal(status, 400);
+  assert.match(body.error, /not configured/i);
+});
+
+test('POST /api/assistant/chat validates the messages array shape', async () => {
+  const { status: s1, body: b1 } = await post('/api/assistant/chat', { 'x-api-key': API_KEY }, {});
+  assert.equal(s1, 400);
+  assert.match(b1.error, /messages/i);
+
+  const { status: s2, body: b2 } = await post('/api/assistant/chat', { 'x-api-key': API_KEY }, { messages: [{ role: 'system', content: 'x' }] });
+  assert.equal(s2, 400);
+  assert.match(b2.error, /role/i);
+});
+
 test('POST /api/:platform/campaigns 400s on an unconfigured platform', async () => {
   const { status, body } = await post('/api/meta/campaigns', { 'x-api-key': API_KEY }, { name: 'x', objective: 'y' });
   assert.equal(status, 400);
