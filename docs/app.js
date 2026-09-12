@@ -142,6 +142,9 @@ function demoResponse(path, method) {
   }
   if (path === '/api/status') return demoStatusResponse();
   if (path === '/api/assistant/chat' && method === 'POST') return DEMO_ASSISTANT_REPLY;
+  if (path === '/api/summary') {
+    return Object.fromEntries(Object.entries(DEMO_SUMMARY).map(([id, summary]) => [id, { status: 'ok', summary }]));
+  }
 
   const summaryMatch = path.match(/^\/api\/([\w-]+)\/summary$/);
   if (summaryMatch) return { platform: summaryMatch[1], connected: true, summary: DEMO_SUMMARY[summaryMatch[1]] || {} };
@@ -273,7 +276,7 @@ function renderGrid(platforms) {
   summaryPillEl.className = `pill ${connectedCount > 0 ? 'pill-green' : 'pill-muted'}`;
 
   gridEl.innerHTML = platforms.map((p) => `
-    <article class="card" data-platform="${p.id}">
+    <article class="card" data-platform="${p.id}" data-connected="${p.connected}">
       <div class="card-head">
         <div>
           <h3>${p.name}</h3>
@@ -281,6 +284,7 @@ function renderGrid(platforms) {
         </div>
         ${statusPill(p)}
       </div>
+      ${p.connected ? `<div data-metric-for="${p.id}"></div>` : ''}
       <div class="card-actions">
         ${p.connected
           ? `<button class="btn btn-primary btn-sm" data-action="details" data-id="${p.id}">Details</button>
@@ -292,6 +296,83 @@ function renderGrid(platforms) {
       </div>
     </article>
   `).join('');
+
+  loadOverview(platforms);
+}
+
+// ---- overview: the "wow at a glance" strip above the platform grid ----
+// Deliberately hidden when nothing is connected — no fabricated zeros.
+
+function formatCompactNumber(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(Math.round(n));
+}
+
+// Picks the single biggest numeric field in a summary as that platform's
+// "headline" number for the at-a-glance view — real per-platform semantics
+// (is fan_count more meaningful than amount_spent?) would need per-platform
+// logic this project has deliberately avoided elsewhere, so "biggest number"
+// is the same kind of honest, generic heuristic as extractNumericFields itself.
+function headlineMetric(summary) {
+  const numeric = extractNumericFields(summary);
+  if (!numeric.length) return null;
+  return numeric.reduce((best, cur) => (cur.value > best.value ? cur : best));
+}
+
+let overviewChart = null;
+
+async function loadOverview(platforms) {
+  const section = document.getElementById('overview-section');
+  const connected = platforms.filter((p) => p.connected);
+  if (connected.length === 0) {
+    section.hidden = true;
+    if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
+    return;
+  }
+  section.hidden = false;
+  document.getElementById('stat-connected').textContent = `${connected.length}/${platforms.length}`;
+
+  try {
+    const summaries = await api('/api/summary');
+    let totalReach = 0;
+    const chartRows = [];
+    for (const p of connected) {
+      const entry = summaries[p.id];
+      if (!entry || entry.status !== 'ok') continue;
+      const metric = headlineMetric(entry.summary);
+      if (!metric) continue;
+      totalReach += metric.value;
+      chartRows.push({ label: p.name, value: metric.value });
+      const slot = document.querySelector(`[data-metric-for="${p.id}"]`);
+      if (slot) {
+        const shortLabel = metric.label.split(/[. ]/).pop().replace(/_/g, ' ');
+        slot.innerHTML = `<div class="card-metric">${formatCompactNumber(metric.value)}</div><div class="card-metric-label">${escapeHtml(shortLabel)}</div>`;
+      }
+    }
+    document.getElementById('stat-reach').textContent = totalReach > 0 ? formatCompactNumber(totalReach) : '—';
+
+    if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
+    if (chartRows.length && window.Chart) {
+      overviewChart = new Chart(document.getElementById('overview-chart'), {
+        type: 'bar',
+        data: {
+          labels: chartRows.map((r) => r.label),
+          datasets: [{ data: chartRows.map((r) => r.value), backgroundColor: themeColor('--accent'), borderRadius: 6 }],
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: themeColor('--text-muted') }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: themeColor('--text-muted') }, grid: { color: themeColor('--border') } },
+          },
+        },
+      });
+    }
+  } catch (err) {
+    toast(`Couldn't load overview: ${err.message}`, 'error');
+  }
 }
 
 gridEl.addEventListener('click', (e) => {
@@ -387,14 +468,16 @@ function escapeHtml(str) {
   return str.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// Best-effort: walk a summary object (up to 2 levels of nested objects,
-// arrays skipped — charting arbitrary array contents generically gets messy
-// fast) collecting real numeric leaf values, so whatever numbers a platform
+// Best-effort: walk a summary object (up to 3 levels deep, arrays included)
+// collecting real numeric leaf values, so whatever numbers a platform
 // actually returns get a chart for free with no per-platform chart code.
+// 3 levels because a real shape like Google's {youtube: [{statistics:
+// {subscriberCount}}]} is object -> array -> object -> the number — 2
+// wasn't enough and silently produced no chart for Google at all.
 // Doesn't catch numeric-looking strings (e.g. YouTube's stats-as-strings) —
 // deliberately conservative rather than guessing which strings are metrics.
 function extractNumericFields(obj, prefix = '', depth = 0, out = []) {
-  if (!obj || typeof obj !== 'object' || depth > 2) return out;
+  if (!obj || typeof obj !== 'object' || depth > 3) return out;
 
   if (Array.isArray(obj)) {
     // Meta's (and others') summaries are often {pages: [...], adAccounts: [...]}

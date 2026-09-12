@@ -136,6 +136,56 @@ main { max-width: 1080px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
 }
 .empty-state h2 { color: var(--text); margin-bottom: 0.5rem; }
 
+.overview { margin-bottom: 2rem; }
+.overview h2 { font-size: 1.3rem; margin: 0 0 1rem; }
+
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.stat-tile {
+  background: linear-gradient(135deg, var(--accent), var(--mark));
+  border-radius: 14px;
+  padding: 1.3rem 1.5rem;
+  box-shadow: var(--shadow);
+}
+.stat-value {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.35rem;
+  font-weight: 600;
+}
+
+.overview-chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: var(--shadow);
+  height: 220px;
+}
+
+.card-metric {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.card-metric-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -145,15 +195,17 @@ main { max-width: 1080px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
   border-radius: 12px;
   padding: 1.1rem;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-top-color 0.15s ease;
 }
-.card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(43, 33, 29, 0.06), 0 12px 28px rgba(43, 33, 29, 0.1); }
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.card[data-connected="true"] { border-top-color: var(--accent); }
 
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
 .card-head h3 { margin: 0; font-size: 1rem; }
