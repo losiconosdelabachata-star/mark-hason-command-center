@@ -130,8 +130,25 @@ h1, h2, h3, .card-head h3, .mark-panel-title {
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { background: transparent; }
 .btn-danger { color: var(--red); border-color: var(--red); background: transparent; }
+.btn-mark { background: var(--mark); color: white; border-color: var(--mark); font-weight: 600; }
+.btn-mark:hover { filter: brightness(1.08); }
 .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.demo-banner {
+  background: var(--mark);
+  color: white;
+  text-align: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.demo-banner .btn { background: rgba(255, 255, 255, 0.18); color: white; border-color: rgba(255, 255, 255, 0.4); }
+.demo-banner .btn:hover { background: rgba(255, 255, 255, 0.28); }
 
 main { max-width: 1080px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
 

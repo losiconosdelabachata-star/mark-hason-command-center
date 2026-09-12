@@ -11,6 +11,24 @@ The repo has two halves that deploy separately (see
 (GitHub Pages), everything else is the API/OAuth backend (Railway). Both
 are covered below.
 
+## Demo mode
+
+For showing the product to someone — a pitch, a client walkthrough — before
+real credentials exist for any platform. Click **"▶ View live demo"** on the
+dashboard's key-gate screen (no admin key needed at all) and every platform
+shows as connected with realistic sample data: charts, the geographic map,
+campaign lists, and Marino responding to chat with a scripted example
+(including a full draft → "Open in form" → create flow). A persistent teal
+banner and pill make it unmistakable that it's sample data, and "Exit demo"
+returns to the real dashboard instantly.
+
+It's entirely client-side (`docs/app.js`'s `demoResponse()`) — no backend
+call is made at all while demo mode is on, so it works even if the backend
+is down or unreachable. Every number is illustrative, not Julieth's real
+figures. It mirrors the real API's response shapes exactly (down to which
+platforms' campaign/geo endpoints are and aren't supported) so it never
+demonstrates a capability the product doesn't actually have.
+
 ## Live deployment
 
 - **Dashboard (open this one):** https://losiconosdelabachata-star.github.io/mark-hason-command-center/

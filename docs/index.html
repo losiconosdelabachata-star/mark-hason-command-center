@@ -27,17 +27,26 @@
     </div>
     <div class="topbar-actions">
       <span id="connection-summary" class="pill pill-muted">checking…</span>
+      <button id="exit-demo-btn" class="btn btn-ghost" hidden>Exit demo</button>
       <button id="refresh-btn" class="btn btn-ghost" title="Refresh status">⟳ Refresh</button>
       <button id="settings-btn" class="btn btn-ghost" title="Settings">⚙ Settings</button>
     </div>
   </header>
+
+  <div id="demo-banner" class="demo-banner" hidden>
+    🎬 <strong>Demo mode</strong> — sample data for a walkthrough, not Julieth's real accounts.
+    <button id="demo-banner-exit" class="btn btn-sm">Exit demo</button>
+  </div>
 
   <main id="app">
     <section id="key-gate" class="empty-state" hidden>
       <img class="empty-state-logo" src="assets/logo-hero.png" srcset="assets/logo-hero@2x.png 2x" alt="julitaco3" height="40" />
       <h2>Connect this dashboard to the backend</h2>
       <p>You need the admin API key for the Command Center backend before anything here will work.</p>
-      <button id="key-gate-btn" class="btn btn-primary">Enter admin key</button>
+      <div class="card-actions" style="justify-content:center;">
+        <button id="key-gate-btn" class="btn btn-primary">Enter admin key</button>
+        <button id="view-demo-btn" class="btn btn-mark">▶ View live demo</button>
+      </div>
     </section>
 
     <section id="platform-grid" class="grid" hidden></section>

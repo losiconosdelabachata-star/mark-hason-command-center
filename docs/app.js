@@ -48,9 +48,131 @@ function clearSettings() {
 let statusCache = [];
 let currentPlatform = null;
 
+// ---- demo mode ----
+// For showing the product to someone (a pitch, a walkthrough) before real
+// credentials exist. Every number below is illustrative sample data, not
+// Julieth's real figures — the persistent banner and pill say so everywhere
+// this data surfaces, and it's never written anywhere the real dashboard
+// would mistake it for a live account.
+const LS_DEMO_MODE = 'mhc_demo_mode';
+function isDemoMode() { try { return localStorage.getItem(LS_DEMO_MODE) === '1'; } catch { return false; } }
+function setDemoMode(on) { try { localStorage.setItem(LS_DEMO_MODE, on ? '1' : '0'); } catch { /* per-viewer only */ } }
+
+const DEMO_PLATFORM_META = {
+  meta: { name: 'Meta (Facebook & Instagram)', category: 'social+ads' },
+  google: { name: 'Google (YouTube, Google Ads, AdSense)', category: 'video+ads' },
+  reddit: { name: 'Reddit', category: 'social+ads' },
+  pinterest: { name: 'Pinterest', category: 'social+ads' },
+  tiktok: { name: 'TikTok', category: 'social' },
+  twitter: { name: 'X (Twitter)', category: 'social' },
+  linkedin: { name: 'LinkedIn', category: 'social+ads' },
+  snapchat: { name: 'Snapchat', category: 'social+ads' },
+  twitch: { name: 'Twitch', category: 'social' },
+  kick: { name: 'Kick', category: 'social' },
+};
+
+const DEMO_SUMMARY = {
+  // Note: real Meta/YouTube APIs return these particular fields as STRINGS
+  // (a well-documented quirk noted elsewhere in this file and the backend
+  // README) — using real numbers here instead so the auto-chart actually
+  // lights up for a demo/pitch. This is the one place demo data
+  // deliberately diverges from a real API's exact response shape.
+  meta: {
+    pages: [{ name: 'Julieth Tapia Co', category: 'Artist', fan_count: 45213, instagram_business_account: { id: '17841400000000' } }],
+    adAccounts: [{ name: 'Julieth Tapia Co Ads', amount_spent: 18450, currency: 'USD' }],
+  },
+  google: {
+    youtube: [{ snippet: { title: 'Julieth Tapia Co' }, statistics: { subscriberCount: 8420, viewCount: 192300, videoCount: 64 } }],
+    adsense: [{ displayName: 'Julieth Tapia Co AdSense' }],
+    googleAds: { status: 'not_configured', note: 'Set GOOGLE_ADS_DEVELOPER_TOKEN and GOOGLE_ADS_CUSTOMER_ID' },
+  },
+  reddit: { name: 'julitaco3', totalKarma: 4820, linkKarma: 3100, commentKarma: 1720 },
+  pinterest: { username: 'julitaco3', followerCount: 12400, monthlyViews: 341000, accountType: 'BUSINESS' },
+  tiktok: { display_name: 'Julieth Tapia Co', follower_count: 22100, likes_count: 187000, video_count: 96 },
+  twitter: { username: 'julitaco3', metrics: { followers_count: 6700, following_count: 320, tweet_count: 1240 } },
+  linkedin: { id: 'abc123', firstName: 'Julieth', lastName: 'Tapia' },
+  snapchat: { display_name: 'Julieth Tapia Co', organization_id: 'org_9182' },
+  twitch: { displayName: 'julitaco3', loginName: 'julitaco3', viewCount: 15600, followers: 890 },
+  kick: { slug: 'julitaco3', followers_count: 540 },
+};
+
+const DEMO_CAMPAIGNS = {
+  meta: [
+    { id: '120211000001', name: 'Spring Floral Print Sale', objective: 'OUTCOME_TRAFFIC', status: 'ACTIVE', daily_budget: '2000' },
+    { id: '120211000002', name: 'Instagram Engagement Boost', objective: 'OUTCOME_ENGAGEMENT', status: 'PAUSED', daily_budget: '1500' },
+  ],
+  reddit: [{ id: 't_demo_1', name: 'r/painting launch push', configured_status: 'PAUSED', daily_budget_cents: 1000 }],
+  pinterest: [{ id: 'pin_demo_1', name: 'Butterfly collection awareness', status: 'ACTIVE', daily_spend_cap: 1200 }],
+  linkedin: [],
+  snapchat: [{ id: 'snap_demo_1', name: 'Holiday gift bags', status: 'PAUSED' }],
+};
+
+const DEMO_GEO = {
+  meta: [
+    { country: 'US', impressions: 18400, clicks: 920, spend: 312.4 },
+    { country: 'CO', impressions: 9200, clicks: 610, spend: 145.1 },
+    { country: 'MX', impressions: 6100, clicks: 280, spend: 88.3 },
+    { country: 'ES', impressions: 3400, clicks: 150, spend: 52.75 },
+    { country: 'GB', impressions: 1800, clicks: 70, spend: 28.1 },
+  ],
+};
+
+const DEMO_ASSISTANT_REPLY = {
+  reply: "Julieth's Instagram and Pinterest are both trending up this month, and Meta's Spring Floral Print Sale campaign is your best performer — $312 spent in the US alone at a solid click rate. Colombia is your #2 market, right behind the US. Want me to draft a campaign to double down on that?",
+  draft: {
+    platform: 'meta',
+    name: 'Colombia Floral Print Push',
+    fields: { objective: 'OUTCOME_TRAFFIC' },
+    rationale: 'Colombia is already your #2 country by reach with strong click-through — a dedicated campaign there could scale that momentum.',
+  },
+};
+
+function demoStatusResponse() {
+  return {
+    platforms: Object.entries(DEMO_PLATFORM_META).map(([id, meta]) => ({ id, ...meta, configured: true, connected: true })),
+    assistant: { configured: true },
+  };
+}
+
+// Mirrors the real backend's response shapes exactly, so every render
+// function downstream works unmodified whether the data is real or demo.
+function demoResponse(path, method) {
+  if (path.startsWith('/auth/')) {
+    throw new Error('This is a demo — connecting/disconnecting real accounts is turned off here. Exit demo mode to use real credentials.');
+  }
+  if (path === '/api/status') return demoStatusResponse();
+  if (path === '/api/assistant/chat' && method === 'POST') return DEMO_ASSISTANT_REPLY;
+
+  const summaryMatch = path.match(/^\/api\/([\w-]+)\/summary$/);
+  if (summaryMatch) return { platform: summaryMatch[1], connected: true, summary: DEMO_SUMMARY[summaryMatch[1]] || {} };
+
+  const geoMatch = path.match(/^\/api\/([\w-]+)\/geo$/);
+  if (geoMatch) {
+    const geo = DEMO_GEO[geoMatch[1]];
+    if (!geo) throw new Error(`${DEMO_PLATFORM_META[geoMatch[1]]?.name || geoMatch[1]} doesn't have a geographic breakdown wired up yet.`);
+    return { platform: geoMatch[1], geo };
+  }
+
+  const campaignsMatch = path.match(/^\/api\/([\w-]+)\/campaigns$/);
+  if (campaignsMatch && method === 'GET') {
+    if (!(campaignsMatch[1] in DEMO_CAMPAIGNS)) throw new Error(`${DEMO_PLATFORM_META[campaignsMatch[1]]?.name || campaignsMatch[1]} doesn't support campaign listing yet.`);
+    return { platform: campaignsMatch[1], campaigns: DEMO_CAMPAIGNS[campaignsMatch[1]] };
+  }
+  if (campaignsMatch && method === 'POST') {
+    return { platform: campaignsMatch[1], status: 'PAUSED', campaign: { id: `demo_${Date.now()}`, status: 'PAUSED' } };
+  }
+
+  const statusChangeMatch = path.match(/^\/api\/([\w-]+)\/campaigns\/[^/]+\/status$/);
+  if (statusChangeMatch) return { platform: statusChangeMatch[1], result: { success: true } };
+
+  throw new Error('This endpoint has no demo data yet.');
+}
+
 // ---- API ----
 
 async function api(path, { method = 'GET', body } = {}) {
+  if (isDemoMode()) return demoResponse(path, method, body);
+
   const { baseUrl, apiKey } = getSettings();
   const res = await fetch(baseUrl.replace(/\/+$/, '') + path, {
     method,
@@ -107,6 +229,30 @@ document.getElementById('settings-clear').addEventListener('click', () => {
   toast('Cleared — enter your admin key again to reconnect.');
   refresh();
 });
+
+// ---- demo mode ----
+
+function updateDemoUI() {
+  const on = isDemoMode();
+  document.getElementById('demo-banner').hidden = !on;
+  document.getElementById('exit-demo-btn').hidden = !on;
+}
+
+function enterDemoMode() {
+  setDemoMode(true);
+  toast("Demo mode on — showing sample data.", 'success');
+  refresh();
+}
+
+function exitDemoMode() {
+  setDemoMode(false);
+  toast('Demo mode off.');
+  refresh();
+}
+
+document.getElementById('view-demo-btn').addEventListener('click', enterDemoMode);
+document.getElementById('exit-demo-btn').addEventListener('click', exitDemoMode);
+document.getElementById('demo-banner-exit').addEventListener('click', exitDemoMode);
 
 // ---- platform grid ----
 
@@ -179,8 +325,9 @@ async function disconnectPlatform(id) {
 }
 
 async function refresh() {
+  updateDemoUI();
   const { apiKey } = getSettings();
-  if (!apiKey) {
+  if (!apiKey && !isDemoMode()) {
     keyGateEl.hidden = false;
     gridEl.hidden = true;
     summaryPillEl.textContent = 'no key set';
@@ -247,12 +394,28 @@ function escapeHtml(str) {
 // Doesn't catch numeric-looking strings (e.g. YouTube's stats-as-strings) —
 // deliberately conservative rather than guessing which strings are metrics.
 function extractNumericFields(obj, prefix = '', depth = 0, out = []) {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj) || depth > 2) return out;
+  if (!obj || typeof obj !== 'object' || depth > 2) return out;
+
+  if (Array.isArray(obj)) {
+    // Meta's (and others') summaries are often {pages: [...], adAccounts: [...]}
+    // — the numbers live inside array items, not at the top level. Cap at 3
+    // items so a long list doesn't turn the chart into an unreadable wall of
+    // bars. Only disambiguate with the item's own name when there's more
+    // than one — the common case (one page, one ad account) should read as
+    // a short "pages fan_count", not a needlessly bracketed single-item label.
+    const items = obj.slice(0, 3);
+    items.forEach((item, i) => {
+      const itemLabel = items.length > 1 ? item?.name || item?.username || item?.title || item?.display_name || i : null;
+      extractNumericFields(item, itemLabel != null ? `${prefix} #${itemLabel}` : prefix, depth + 1, out);
+    });
+    return out;
+  }
+
   for (const [key, value] of Object.entries(obj)) {
-    const label = prefix ? `${prefix}.${key}` : key;
+    const label = prefix ? `${prefix} ${key}` : key;
     if (typeof value === 'number' && Number.isFinite(value)) {
       out.push({ label, value });
-    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+    } else if (value && typeof value === 'object') {
       extractNumericFields(value, label, depth + 1, out);
     }
   }
@@ -273,7 +436,7 @@ async function loadSummary(id) {
     const data = await api(`/api/${id}/summary`);
     const numeric = extractNumericFields(data.summary);
     el.innerHTML = `
-      ${numeric.length ? '<canvas id="summary-chart" height="140" role="img" aria-label="Chart of numeric analytics fields"></canvas>' : ''}
+      ${numeric.length ? `<div style="height:${Math.max(120, numeric.length * 42)}px;"><canvas id="summary-chart" role="img" aria-label="Chart of numeric analytics fields"></canvas></div>` : ''}
       <details ${numeric.length ? '' : 'open'} style="margin-top:${numeric.length ? '1rem' : '0'};">
         <summary>Raw response</summary>${prettyJson(data.summary)}
       </details>
@@ -287,6 +450,7 @@ async function loadSummary(id) {
         },
         options: {
           indexAxis: 'y',
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             x: { beginAtZero: true, ticks: { color: themeColor('--text-muted') }, grid: { color: themeColor('--border') } },
