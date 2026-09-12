@@ -5,54 +5,33 @@
    nothing once they have content. This restores `hidden` actually hiding. */
 [hidden] { display: none !important; }
 
+/* Deliberately a single committed look — black, not a light/dark toggle —
+   so the dashboard reads identically no matter the viewer's OS theme
+   setting. Matters for a pitch: the presentation shouldn't vary depending
+   on whose laptop it's opened on. Still a warm black (not a cool pure
+   #000/grey) and still built from Julieth's actual palette — coral/pink
+   and teal from her floral work — just against black instead of cream. */
 :root {
-  /* Warm neutrals + a palette pulled from Julieth's actual work (the
-     coral/pink and teal running through her floral pieces) instead of a
-     generic cool-grey/blue SaaS look. */
-  --bg: #fbf6f1;
-  --surface: #ffffff;
-  --surface-2: #f5ede4;
-  --border: #eae0d3;
-  --text: #2b211d;
-  --text-muted: #7a6b61;
-  --accent: #e23f73;
-  --accent-contrast: #ffffff;
-  --green: #1a8f5f;
-  --green-bg: #e6f5ec;
-  --yellow: #b8791a;
-  --yellow-bg: #fbf0de;
-  --red: #d93636;
-  --red-bg: #fcecea;
-  --gray: #8a7a6e;
-  --gray-bg: #f1e7dd;
-  --mark: #0e7a72;
-  --mark-bg: #e3f3f1;
-  --shadow: 0 1px 2px rgba(43, 33, 29, 0.05), 0 8px 24px rgba(43, 33, 29, 0.07);
-  --shadow-hover: 0 2px 4px rgba(43, 33, 29, 0.06), 0 12px 28px rgba(43, 33, 29, 0.1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1e1613;
-    --surface: #2a211c;
-    --surface-2: #362b24;
-    --border: #473a31;
-    --text: #f5eae0;
-    --text-muted: #b3a192;
-    --accent: #ff6f9c;
-    --accent-contrast: #1e1613;
-    --green: #4ade94;
-    --green-bg: #1c3327;
-    --yellow: #f0b84d;
-    --yellow-bg: #3a2c12;
-    --red: #ff7b72;
-    --red-bg: #3a1d1b;
-    --gray: #b3a192;
-    --gray-bg: #362b24;
-    --mark: #4fd0c4;
-    --mark-bg: #163431;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
-  }
+  --bg: #0a0908;
+  --surface: #171412;
+  --surface-2: #211d19;
+  --border: #322c26;
+  --text: #f5eae0;
+  --text-muted: #a89b8f;
+  --accent: #ff6f9c;
+  --accent-contrast: #0a0908;
+  --green: #4ade94;
+  --green-bg: #1c3327;
+  --yellow: #f0b84d;
+  --yellow-bg: #3a2c12;
+  --red: #ff7b72;
+  --red-bg: #3a1d1b;
+  --gray: #a89b8f;
+  --gray-bg: #211d19;
+  --mark: #4fd0c4;
+  --mark-bg: #163431;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 12px 28px rgba(0, 0, 0, 0.5);
 }
 
 * { box-sizing: border-box; }
@@ -107,11 +86,9 @@ h1, h2, h3, .card-head h3, .mark-panel-title {
 .empty-state-logo { display: block; margin: 0 auto 1.1rem; }
 
 /* The logo is solid black ink on transparent — invert it to read as white
-   ink in dark mode rather than shipping a second asset. */
-@media (prefers-color-scheme: dark) {
-  .brand-wordmark, .empty-state-logo { filter: invert(1); }
-  .brand-mark { filter: invert(1); background: var(--surface-2); }
-}
+   ink against the always-black background, rather than shipping a second
+   asset just for that. */
+.brand-wordmark, .empty-state-logo, .brand-mark { filter: invert(1); }
 
 .topbar-actions { display: flex; align-items: center; gap: 0.6rem; }
 
