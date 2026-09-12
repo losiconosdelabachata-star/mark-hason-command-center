@@ -78,23 +78,27 @@ a { color: var(--accent); }
 
 .brand { display: flex; align-items: center; gap: 0.85rem; }
 
-.brand-badge {
+.brand-mark {
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), #7c3aed);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 0.02em;
+  background: var(--surface-2);
+  padding: 7px;
   flex-shrink: 0;
+  object-fit: contain;
 }
 
 .brand h1 { font-size: 1.15rem; margin: 0; }
-.subtitle { margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
+.subtitle { margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; }
+.brand-wordmark { vertical-align: middle; }
+.empty-state-logo { display: block; margin: 0 auto 1.1rem; }
+
+/* The logo is solid black ink on transparent — invert it to read as white
+   ink in dark mode rather than shipping a second asset. */
+@media (prefers-color-scheme: dark) {
+  .brand-wordmark, .empty-state-logo { filter: invert(1); }
+  .brand-mark { filter: invert(1); background: var(--surface-2); }
+}
 
 .topbar-actions { display: flex; align-items: center; gap: 0.6rem; }
 

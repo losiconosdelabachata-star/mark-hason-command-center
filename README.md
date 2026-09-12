@@ -22,10 +22,19 @@ so free GitHub Pages hosting works — there are no real secrets in it (the
 admin key and every platform's client secret live only in Railway's env
 vars and, for the admin key, the browser of whoever opens the dashboard).
 
-The first time Mark opens the dashboard, it'll ask for the backend's admin
-API key — he has that value (or can get it with `railway variables` if he's
-added to this Railway project); it's stored only in his browser's
-localStorage from then on, never in this repo.
+`ADMIN_API_KEYS` on the backend is comma-separated, so each person gets
+their **own** key instead of sharing one — easy to tell apart in logs and to
+revoke individually later. Mark's personal link is:
+
+```
+https://losiconosdelabachata-star.github.io/mark-hason-command-center/?key=<his-key>
+```
+
+Opening that link auto-saves his key to his browser's localStorage and
+immediately scrubs `?key=...` from the address bar (so it doesn't linger in
+history or get bookmarked in plain sight) — he never has to copy-paste
+anything. Anyone opening the dashboard without a `?key=` still gets the
+normal "enter admin key" prompt and can paste one in by hand via Settings.
 
 The backend URL only answers `GET /` with no key. Every `/auth/*` and
 `/api/*` route requires the `x-api-key` header — treat that key like a

@@ -448,4 +448,21 @@ markForm.addEventListener('submit', async (e) => {
 });
 
 // ---- boot ----
+
+// Magic-link login: a personal link like ?key=... auto-saves that key to
+// this browser and never touches the URL bar for more than an instant — so
+// whoever it was shared with (e.g. Mark) doesn't have to copy-paste a key
+// by hand, and it doesn't linger in their browser history/bookmarks as a
+// visible query string afterward.
+(function consumeMagicLink() {
+  const params = new URLSearchParams(window.location.search);
+  const magicKey = params.get('key');
+  if (!magicKey) return;
+  saveSettings(getSettings().baseUrl, magicKey);
+  params.delete('key');
+  const rest = params.toString();
+  const cleanUrl = window.location.pathname + (rest ? `?${rest}` : '') + window.location.hash;
+  window.history.replaceState({}, '', cleanUrl);
+})();
+
 refresh();
