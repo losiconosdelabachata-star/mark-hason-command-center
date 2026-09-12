@@ -40,10 +40,10 @@ module.exports = definePlatform({
    *   objectiveType: e.g. "AWARENESS", "CONSIDERATION", "CATALOG_SALES"
    */
   async createCampaign(tokens, params) {
-    const accountId = requireEnv('PINTEREST_AD_ACCOUNT_ID');
     if (!params?.name || !params?.objectiveType || !params?.dailySpendCapCents) {
       throw new Error('Pinterest campaign requires: name, objectiveType, dailySpendCapCents.');
     }
+    const accountId = requireEnv('PINTEREST_AD_ACCOUNT_ID');
     return apiPost(
       `https://api.pinterest.com/v5/ad_accounts/${accountId}/campaigns`,
       { Authorization: `Bearer ${tokens.accessToken}` },

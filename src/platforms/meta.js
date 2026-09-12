@@ -58,10 +58,10 @@ module.exports = definePlatform({
    *   (Meta's Outcome-Driven Ad Experience objective names).
    */
   async createCampaign(tokens, params) {
-    const accountId = requireEnv('META_AD_ACCOUNT_ID', 'Set it to the numeric id shown in Meta Ads Manager account settings.');
     if (!params?.name || !params?.objective) {
       throw new Error('Meta campaign requires: name, objective (e.g. OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT, OUTCOME_AWARENESS).');
     }
+    const accountId = requireEnv('META_AD_ACCOUNT_ID', 'Set it to the numeric id shown in Meta Ads Manager account settings.');
     return apiPost(
       `https://graph.facebook.com/${GRAPH_VERSION}/act_${accountId}/campaigns?access_token=${tokens.accessToken}`,
       {},

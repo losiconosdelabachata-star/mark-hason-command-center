@@ -130,10 +130,10 @@ module.exports = definePlatform({
    *   advertisingChannelType: e.g. "SEARCH", "DISPLAY", "VIDEO" (defaults to SEARCH)
    */
   async createCampaign(tokens, params) {
-    const customerId = requireEnv('GOOGLE_ADS_CUSTOMER_ID', 'Set it to the target Google Ads account id (no dashes).');
     if (!params?.name || !params?.dailyBudgetMicros) {
       throw new Error('Google Ads campaign requires: name, dailyBudgetMicros (1 USD = 1,000,000 micros).');
     }
+    const customerId = requireEnv('GOOGLE_ADS_CUSTOMER_ID', 'Set it to the target Google Ads account id (no dashes).');
 
     const budgetResourceName = `customers/${customerId}/campaignBudgets/-1`;
     const budgetResult = await googleAdsMutate(tokens.accessToken, customerId, 'campaignBudgets', [

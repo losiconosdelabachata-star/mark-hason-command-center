@@ -37,10 +37,10 @@ module.exports = definePlatform({
    *   objective: e.g. "AWARENESS", "APP_INSTALLS", "WEB_CONVERSIONS"
    */
   async createCampaign(tokens, params) {
-    const accountId = requireEnv('SNAPCHAT_AD_ACCOUNT_ID');
     if (!params?.name || !params?.objective) {
       throw new Error('Snapchat campaign requires: name, objective.');
     }
+    const accountId = requireEnv('SNAPCHAT_AD_ACCOUNT_ID');
     return apiPost(
       `https://adsapi.snapchat.com/v1/adaccounts/${accountId}/campaigns`,
       { Authorization: `Bearer ${tokens.accessToken}` },

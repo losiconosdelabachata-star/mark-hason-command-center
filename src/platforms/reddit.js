@@ -53,10 +53,10 @@ module.exports = definePlatform({
    * @param {{name: string, objective: string, dailyBudgetCents: number}} params
    */
   async createCampaign(tokens, params) {
-    const accountId = requireEnv('REDDIT_AD_ACCOUNT_ID', 'Reddit Ads API access is a separate approval from basic login — see .env.example.');
     if (!params?.name || !params?.objective || !params?.dailyBudgetCents) {
       throw new Error('Reddit campaign requires: name, objective, dailyBudgetCents.');
     }
+    const accountId = requireEnv('REDDIT_AD_ACCOUNT_ID', 'Reddit Ads API access is a separate approval from basic login — see .env.example.');
     return apiPost(
       `${ADS_API_BASE}/accounts/${accountId}/campaigns`,
       { Authorization: `Bearer ${tokens.accessToken}`, 'User-Agent': this.userAgent },

@@ -197,6 +197,23 @@ Adding a platform means adding one file under `src/platforms/` with its
 OAuth endpoints, scope, and a `getSummary()` — nothing else in the app needs
 to change; `src/platforms/index.js` picks it up automatically.
 
+## Testing
+
+```bash
+npm test
+```
+
+Uses Node's built-in test runner (`node --test`) — no test framework
+dependency. Runs on every push/PR via GitHub Actions
+(`.github/workflows/test.yml`). Covers: encryption round-trips and tamper
+detection, the OAuth2 client (PKCE, both token-auth styles, refresh
+fallback), every platform's config/interface/validation logic (including
+that TikTok and X correctly refuse instead of attempting a mismatched-auth
+call), the API-key middleware, the token store, and end-to-end route
+behavior against a real Express instance on an ephemeral port. Nothing here
+needs real platform credentials — nothing in this suite makes a real
+network call to Meta/Google/etc.
+
 ## Deploying
 
 Currently deployed on **Railway** (see [Live deployment](#live-deployment)

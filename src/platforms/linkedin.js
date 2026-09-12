@@ -57,10 +57,10 @@ module.exports = definePlatform({
    *   without a group.
    */
   async createCampaign(tokens, params) {
-    const accountUrn = requireEnv('LINKEDIN_AD_ACCOUNT_URN', 'Format: urn:li:sponsoredAccount:123456789');
     if (!params?.name || !params?.campaignGroupUrn || !params?.dailyBudgetAmount) {
       throw new Error('LinkedIn campaign requires: name, campaignGroupUrn, dailyBudgetAmount.');
     }
+    const accountUrn = requireEnv('LINKEDIN_AD_ACCOUNT_URN', 'Format: urn:li:sponsoredAccount:123456789');
     return apiPost(
       `https://api.linkedin.com/rest/adAccounts/${encodeURIComponent(accountUrn)}/adCampaigns`,
       this.linkedinHeaders(tokens.accessToken),

@@ -33,12 +33,19 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  const configuredCount = platforms.all.filter((p) => p.isConfigured()).length;
-  console.log(`Mark Hason Command Center backend listening on :${PORT}`);
-  console.log(`Platforms configured: ${configuredCount}/${platforms.all.length}`);
-  if (!process.env.ADMIN_API_KEYS) {
-    console.warn('WARNING: ADMIN_API_KEYS is not set — all /auth and /api routes will refuse requests until it is.');
-  }
-});
+// Only auto-start a listener when this file is run directly (`node server.js`
+// / `npm start`) — not when tests `require('../server')` to get the app and
+// bind it to their own ephemeral port instead.
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    const configuredCount = platforms.all.filter((p) => p.isConfigured()).length;
+    console.log(`Mark Hason Command Center backend listening on :${PORT}`);
+    console.log(`Platforms configured: ${configuredCount}/${platforms.all.length}`);
+    if (!process.env.ADMIN_API_KEYS) {
+      console.warn('WARNING: ADMIN_API_KEYS is not set — all /auth and /api routes will refuse requests until it is.');
+    }
+  });
+}
+
+module.exports = app;

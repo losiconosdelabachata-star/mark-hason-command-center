@@ -11,7 +11,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
+// Overridable so tests (and, if you ever need it, a deployment with a
+// mounted volume at a non-default path) can point this somewhere else.
+const DATA_DIR = process.env.MHC_DATA_DIR || path.join(__dirname, '..', 'data');
 const KEY_FILE = path.join(DATA_DIR, '.encryption-key');
 
 function loadOrCreateKey() {
