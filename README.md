@@ -32,16 +32,17 @@ The backend URL only answers `GET /` with no key. Every `/auth/*` and
 password (store it in a password manager, don't paste it into chat tools or
 commit it anywhere).
 
-**Both halves auto-deploy on push to `master` — no manual deploy step for
-either one:**
-- The backend's Railway service is connected directly to this GitHub repo;
-  every push triggers a new build there (watch it at
-  `railway logs --build` or the Railway dashboard).
-- The dashboard (`docs/`) is rebuilt by GitHub Pages on every push that
-  touches that folder, usually live within a minute or two.
+**Only the dashboard auto-deploys** — GitHub Pages rebuilds `docs/`
+automatically on every push that touches it, usually live within a minute
+or two.
 
-Manual redeploy is only needed if you ever want to force one without a new
-commit:
+**The backend does not auto-deploy yet.** Railway's `service source connect`
+records which repo/branch to build from, but push-triggered deploys need
+Railway's GitHub App actually installed with access to this repo — that's a
+one-time browser consent step only the repo owner can grant (Railway →
+project settings → connect repo, or approve the GitHub App install prompt),
+not something completable via CLI alone. Until that's done, redeploy the
+backend manually after pulling changes:
 
 ```bash
 railway login      # first time only, on whichever machine is deploying
